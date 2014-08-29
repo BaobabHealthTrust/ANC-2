@@ -211,7 +211,7 @@ next_task = task.encounter_type.gsub('_',' ') rescue nil
                   <% end %>
 
           <% if current_user.activities.include?("Registration") %>
-            <option value='/patients/demographics?patient_id=<%= @patient.id %>'>Demographics</option>
+            <option value='/dde/edit_patient?patient_id=<%= @patient.id %>'>Demographics</option>
           <% end %>
         </select>
         <select id="tabs">
