@@ -421,55 +421,56 @@ module PatientService
     new_params['gender'] == 'F' ? new_params['gender'] = "Female" : new_params['gender'] = "Male"
 
     known_demographics = {
-      "occupation"=>"#{new_params[:occupation]}",
-      "patient_year"=>"#{new_params[:birth_year]}",
-      "patient"=>{
-        "gender"=>"#{new_params[:gender]}",
-        "birthplace"=>"#{new_params[:addresses][:address2]}",
-        "creator" => 1,
-        "changed_by" => 1
-      },
-      "p_address"=>{
-        "identifier"=>"#{new_params[:addresses][:state_province]}"},
-      "home_phone"=>{
-        "identifier"=>"#{new_params[:home_phone_number]}"},
-      "cell_phone"=>{
-        "identifier"=>"#{new_params[:cell_phone_number]}"},
-      "office_phone"=>{
-        "identifier"=>"#{new_params[:office_phone_number]}"},
-      "patient_id"=>"",
-      "patient_day"=>"#{new_params[:birth_day]}",
-      "patientaddress"=>{"city_village"=>"#{new_params[:addresses][:city_village]}"},
-      "patient_name"=>{
-        "family_name"=>"#{new_params[:names][:family_name]}",
-        "given_name"=>"#{new_params[:names][:given_name]}", "creator" => 1
-      },
-      "patient_month"=>"#{new_params[:birth_month]}",
-      "patient_age"=>{
-        "age_estimate"=>"#{new_params[:age_estimate]}"
-      },
-      "age"=>{
-        "identifier"=>""
-      },
-      "current_ta"=>{
-        "identifier"=>"#{new_params[:addresses][:county_district]}"}
+
+        "addresses"=>{
+            "state_province"=>"#{new_params[:addresses][:state_province]}",
+            "address2"=>"#{new_params[:addresses][:address2]}",
+            "address1"=>"#{new_params[:addresses][:address1]}",
+            "neighborhood_cell"=>"#{new_params[:addresses][:neighborhood_cell]}",
+            "city_village"=>"#{new_params[:addresses][:city_village]}",
+            "county_district"=>"#{new_params[:addresses][:county_district]}"
+        },
+        "home_phone"=>{
+            "identifier"=>"#{new_params[:home_phone_number]}"},
+        "cell_phone"=>{
+            "identifier"=>"#{new_params[:cell_phone_number]}"},
+        "office_phone"=>{
+            "identifier"=>"#{new_params[:office_phone_number]}"},
+
+        "patient_name"=>{
+            "family_name"=>"#{new_params[:names][:family_name]}",
+            "given_name"=>"#{new_params[:names][:given_name]}",
+            "creator" => 1
+        },
+        "occupation"=>"#{new_params[:occupation]}",
+        "race"=>"#{new_params[:race]}",
+        "patient_year"=>"#{new_params[:birth_year]}",
+        "patient_month"=>"#{new_params[:birth_month]}",
+        "patient_day"=>"#{new_params[:birth_day]}",
+        "patient_age"=>{
+            "age_estimate"=>"#{new_params[:age_estimate]}"
+        },
+        "patient"=>{
+            "gender"=>"#{new_params[:gender]}",
+            "birthplace"=>"#{new_params[:addresses][:address2]}",
+            "creator" => 1,
+            "changed_by" => 1
+         }
     }
 
-    servers = GlobalProperty.find(:first, 
-      :conditions => {:property => "remote_servers.parent"}).property_value.split(/,/) rescue nil
+    servers = CoreService.get_global_property_value("remote_servers.parent").split(/,/) rescue nil
     server_address_and_port = servers.to_s.split(':')
     server_address = server_address_and_port.first
     server_port = server_address_and_port.second
-    login = GlobalProperty.find(:first, 
-      :conditions => {:property => "remote_bart.username"}).property_value.split(/,/) rescue ''
-    password = GlobalProperty.find(:first, 
-      :conditions => {:property => "remote_bart.password"}).property_value.split(/,/) rescue ''
+    login = CoreService.get_global_property_value("remote_bart.username").split(/,/) rescue ''
+    password = CoreService.get_global_property_value("remote_bart.password").split(/,/) rescue ''
 
     if server_port.blank?
       uri = "http://#{login.first}:#{password.first}@#{server_address}/patient/create_remote"                          
     else
-      uri = "http://#{login.first}:#{password.first}@#{server_address}:#{server_port}/patient/create_remote"                          
+      uri = "http://#{login.first}:#{password.first}@#{server_address}:#{server_port}/patient/create_remote"
     end
+
     output = RestClient.post(uri,known_demographics)      
 
     results = []
@@ -488,6 +489,7 @@ module PatientService
       person["person"]["attributes"].delete("cell_phone_number")
       person["person"]["attributes"].delete("home_phone_number")
       person["person"]["attributes"].delete("office_phone_number")
+      person["person"]["attributes"].delete("race")
     rescue
     end   
 
@@ -495,7 +497,7 @@ module PatientService
   end
   
   def self.find_remote_person(known_demographics)
-    servers = GlobalProperty.find(:first, :conditions => {:property => "remote_servers.parent"}).property_value.split(/,/) rescue nil
+    servers = CoreService.get_global_property_value("remote_servers.parent").split(/,/) rescue nil
     server_address_and_port = servers.to_s.split(':')
     server_address = server_address_and_port.first
     server_port = server_address_and_port.second
@@ -507,8 +509,8 @@ module PatientService
     # then pull down the demographics
     # TODO fix login/pass and location with something better
 
-    login = GlobalProperty.find(:first, :conditions => {:property => "remote_bart.username"}).property_value.split(/,/) rescue ""
-    password = GlobalProperty.find(:first, :conditions => {:property => "remote_bart.password"}).property_value.split(/,/) rescue ""
+    login = CoreService.get_global_property_value("remote_bart.username").split(/,/) rescue ''
+    password = CoreService.get_global_property_value("remote_bart.password").split(/,/) rescue ''
 
     # TODO need better logic here to select the best result or merge them
     # Currently returning the longest result - assuming that it has the most information
