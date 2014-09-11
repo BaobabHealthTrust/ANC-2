@@ -1403,6 +1403,27 @@ class PatientsController < ApplicationController
     end
   end
 
+  def auto_print_lab_results
+
+    @lab_encounters = @patient.encounters.find(:all, :conditions => ["encounter_type IN (?)",
+                                                                     EncounterType.find_by_name("LAB RESULTS").id])
+
+    available = false # some test was really done at last visit
+    ((@lab_encounters.last.observations rescue []) || []).each do |ob|
+
+      if !ob.answer_string.match(/not done/i) && ob.concept.name.name != "Workstation location"
+        available = true
+      end
+    end
+
+    if available.to_s == "true"
+
+      redirect_to("/patients/exam_label/?patient_id=#{@patient.id}") and return
+    end
+
+    redirect_to next_task(@patient)
+  end
+
   def exam_label
     print_string = @anc_patient.examination_label rescue (raise "Unable to find patient (#{params[:patient_id]}) or generate an obstetric and medical history label for that patient")
     send_data(print_string,:type=>"application/label; charset=utf-8", :stream=> false, :filename=>"#{params[:patient_id]}#{rand(10000)}.lbl", :disposition => "inline")
