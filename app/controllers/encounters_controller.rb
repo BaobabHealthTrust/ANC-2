@@ -129,8 +129,22 @@ class EncountersController < ApplicationController
     redirect_to "/patients/print_registration?patient_id=#{@patient.id}" and return if ((encounter.type.name.upcase rescue "") == 
         "REGISTRATION")
 
-    redirect_to "/patients/auto_print_lab_results?patient_id=#{@patient.id}" and return if ((encounter.type.name.upcase rescue "") ==
-        "LAB RESULTS")
+    if ((encounter.type.name.upcase rescue "") == "LAB RESULTS")
+
+      available = false
+      ((encounter.observations rescue []) || []).each do |ob|
+
+        if !ob.answer_string.match(/not done/i) && ob.concept.name.name != "Workstation location"
+          available = true
+        end
+      end
+
+      if available.to_s == "true"
+
+        print_and_redirect("/patients/exam_label?patient_id=#{@patient.id}",
+                           next_task(@patient)) and return
+      end
+    end
 
     redirect_to "/patients/print_history/?patient_id=#{@patient.id}" and return if (encounter.type.name.upcase rescue "") == 
       "SOCIAL HISTORY"
