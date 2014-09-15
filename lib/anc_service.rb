@@ -1511,17 +1511,15 @@ module ANCService
     end
 
     def hiv_status
-      stat = self.patient.encounters.last(:joins => [:observations], :conditions =>
-          ["encounter_type = ? AND obs.concept_id = ? AND ((obs.value_coded IN (?)" +
-            " OR obs.value_text = 'POSITIVE') OR (obs.value_coded IN (?) OR obs.value_text = 'NEGATIVE'))",
-          EncounterType.find_by_name("LAB RESULTS").id, ConceptName.find_by_name("HIV status").concept_id,
-          ConceptName.find(:all, :conditions => ["name = 'POSITIVE'"]).collect{|c| c.concept_id},
-          ConceptName.find(:all, :conditions => ["name = 'NEGATIVE'"]).collect{|c|
-            c.concept_id}]).observations.collect{|o| o.answer_string.strip if o.answer_string.titleize.squish == "Positive" ||
-          o.answer_string.titleize.squish == "Negative"}.compact.last rescue nil
 
-      stat = "Unknown" if stat.nil?
-      
+      stat = self.patient.encounters.find_by_sql("SELECT COALESCE(o.value_text,
+                        (SELECT c.name FROM concept_name c WHERE c.concept_id = o.concept_id LIMIT 1)) value FROM encounter e
+                          INNER JOIN obs o ON o.encounter_id = e.encounter_id
+                          WHERE e.encounter_type = (SELECT encounter_type_id FROM encounter_type WHERE name = 'LAB RESULTS' LIMIT 1)
+                            AND o.concept_id = (SELECT concept_id FROM concept_name WHERE name = 'HIV STATUS')
+                            AND e.patient_id = #{self.patient.patient_id} LIMIT 1
+                  ").last.value.match(/Negative|Positive/i)[0] rescue "Unknown"
+      stat = "Unknown" if stat.blank?
       stat
     end
     
