@@ -5,7 +5,7 @@
     <div class="cell" style="width: 50%; border-radius: 1px; overflow: auto; 
         border: 1px solid #666; vertical-align: top; padding: 10px;">
         
-      <div  style="font-size: 32px; padding: 5px; background-color: #84cfa5; 
+      <div  style="font-size: 32px; padding: 5px; background-color: #84cfa5;
           text-align: center; border-radius: 0px; margin: auto; margin-bottom: 10px;">
         Captured Data
       </div>
@@ -80,10 +80,15 @@
               Current Address:
             </div>
             <div class="cell  input_cell no_bottom">
+              <% if  !@json["attributes"]["country_of_residence"].blank?%>
+                  <%= @json["attributes"]["country_of_residence"]%><br/>
+              <% end %>
               <%= @json["addresses"]["current_residence"] rescue nil %><br/>
               <%= @json["addresses"]["current_village"] rescue nil %><br/>
               <%= @json["addresses"]["current_ta"] rescue nil %><br/>
               <%= @json["addresses"]["current_district"] rescue nil %>
+
+
               &nbsp;
             </div>
             <div class="cell">
@@ -96,6 +101,9 @@
               Home Address:
             </div>
             <div class="cell input_cell no_bottom">
+              <% if  !@json["attributes"]["citizenship"].blank?%>
+                  <%= @json["attributes"]["citizenship"]%><br/>
+              <% end %>
               <%= @json["addresses"]["home_village"] rescue nil %><br/>
               <%= @json["addresses"]["home_ta"] rescue nil %><br/>
               <%= @json["addresses"]["home_district"] rescue nil %>
@@ -108,7 +116,7 @@
       </div>
       
       
-      <div  style="font-size: 32px; padding: 5px; background-color: #84cfa5; 
+      <div  style="font-size: 32px; padding: 5px; background-color: #84cfa5;
           text-align: center; border-radius: 0px; margin: auto; margin-bottom: 10px; margin-top: 10px;">
         Matched Data
       </div>
@@ -183,6 +191,9 @@
               Current Address:
             </div>
             <div class="cell  input_cell no_bottom">
+              <% if  !@json["attributes"]["country_of_residence"].blank?%>
+                  <%= @json["attributes"]["country_of_residence"]%><br/>
+              <% end %>
               <%= @json["addresses"]["current_residence"] rescue nil %><br/>
               <%= @json["addresses"]["current_village"] rescue nil %><br/>
               <%= @json["addresses"]["current_ta"] rescue nil %><br/>
@@ -199,6 +210,9 @@
               Home Address:
             </div>
             <div class="cell input_cell no_bottom">
+              <% if  !@json["attributes"]["citizenship"].blank?%>
+                  <%= @json["attributes"]["citizenship"]%><br/>
+              <% end %>
               <%= @json["addresses"]["home_village"] rescue nil %><br/>
               <%= @json["addresses"]["home_ta"] rescue nil %><br/>
               <%= @json["addresses"]["home_district"] rescue nil %>

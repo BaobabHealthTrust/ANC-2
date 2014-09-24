@@ -537,7 +537,7 @@
                      :ajaxURL => '/people/region/Region?field=role&foreign=true&value=',
                      :tt_pageStyleClass => "NoKeyboard",
                      :tt_BeforeUnLoad => "verifyFields(2)",
-                     :tt_onUnLoad => "if ($('filter_region').value == 'Foreign'){ $('person_addresses_city_village').value = ''; $('state_province').value = '';}",
+                     :tt_onUnLoad => "if ($('filter_region').value == 'Foreign'){ $('person_addresses_city_village').value = ''; $('state_province').value;}",
                      :tt_onLoad => "showNext(); ajaxifyDistricts();" %></p>
 
 

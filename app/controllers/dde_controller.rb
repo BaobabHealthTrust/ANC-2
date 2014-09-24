@@ -175,7 +175,14 @@ class DdeController < ApplicationController
   end
 
   def new_patient
-    
+
+    values = ['','Driver','Housewife','Messenger','Business','Farmer','Salesperson','Teacher',
+              'Student','Security guard','Domestic worker', 'Police','Office worker',
+              'Mechanic','Prisoner','Craftsman','Healthcare Worker','Soldier'].sort.concat(["Other"])
+    values.concat(["Unknown"]) if !session[:datetime].blank?
+    @occupations = values
+    i=0
+    @month_names = [[]] +Date::MONTHNAMES[1..-1].collect{|month|[month,i+=1]} + [["Unknown","Unknown"]]
     @settings = YAML.load_file("#{Rails.root}/config/dde_connection.yml")[Rails.env] rescue {}
             
   end
