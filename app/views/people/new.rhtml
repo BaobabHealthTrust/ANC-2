@@ -475,7 +475,7 @@
 
   <%= text_field "p[addresses]" , 'county_district_a', :tt_onUnLoad => '$("person_addresses_county_district").value = $("p_addresses_county_district_a").value', :condition => '$("address2").value == "Other"', :ajaxURL => '/person_addresses/traditional_authority?search_string=' , :helpText => 'Specify Ancestral Traditional Authority (T/A) or area of residence' , :tt_pageStyleClass => "azButton", :allowFreeText => true, :tt_onLoad => "$('nextButton').style.display = 'block';" if ask_home_village   %></p>
 
-  <p><label for="filter_region">Current Region</label></br>
+  <p><label for="filter_region">Current Addresss</label></br>
     <%= text_field "filter" , 'region', :helpText => 'Current Address',
       :ajaxURL => '/people/region/Region?field=role&foreign=true&value=',
       :tt_pageStyleClass => "NoKeyboard",
