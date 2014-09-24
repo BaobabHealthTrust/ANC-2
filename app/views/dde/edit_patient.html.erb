@@ -332,6 +332,10 @@
     <button class="green" style="float: right; margin-right: 30px;" onclick="window.location = '/patients/show/<%= @person.patient.patient_id rescue nil %>'">
       <span>Finish</span>
     </button>
+
+    <button class="blue" style="float: right; margin-right: 30px;" onclick="window.location = '/patients/national_id_label?patient_id=<%= @person.patient.patient_id%>&route_back=true'">
+      <span>Print Registration</span>
+    </button>
   </div>
 
 </body>
