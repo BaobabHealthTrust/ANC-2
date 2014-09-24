@@ -623,8 +623,9 @@
                                :field_type => 'number',
                                :helpText => 'Office Phone Number',
                                :tt_onLoad => "showNext()",
-                               :validationRule => "^0\\d{7}$|Unknown|Not Available|^0\\d{9}$",
-                               :validationMessage => "Not a valid phone number"
+                               :validationRule => "^0\\d{7}$|Unknown|Not Available|N\/A|^0\\d{9}$",
+                               :validationMessage => "Not a valid phone number",
+                               :tt_pageStyleClass => "nota"
                        } if ask_multiple_phone_numbers.to_s == 'true'
     %>
 
@@ -633,8 +634,9 @@
                                :field_type => 'number',
                                :helpText => 'Home Phone Number',
                                :tt_onLoad => "showNext()",
-                               :validationRule => "^0\\d{7}$|Unknown|Not Available|^0\\d{9}$",
-                               :validationMessage => "Not a valid phone number"
+                               :validationRule => "^0\\d{7}$|Unknown|Not Available|N\/A|^0\\d{9}$",
+                               :validationMessage => "Not a valid phone number",
+                               :tt_pageStyleClass => "nota"
                        } if ask_multiple_phone_numbers.to_s == 'true'
     %>
 

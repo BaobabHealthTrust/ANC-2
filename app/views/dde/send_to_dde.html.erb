@@ -310,7 +310,6 @@
   
   var json = <%= (params[:person]).to_json rescue "{}" %>;
 
-  <%#raise params[:person].to_yaml%>
   var people = [];
   
   function make_base_auth(user, password) {
@@ -512,7 +511,19 @@
           
         }
       }
-              
+
+         var country_of_residence = "";
+         var citizenship = "";
+
+          if (obj.person_attributes && obj.person_attributes.country_of_residence &&
+                  typeof(obj.person_attributes.country_of_residence) != "undefined"){
+              country_of_residence = obj.person_attributes.country_of_residence;
+          }
+
+        if (obj.person_attributes && obj.person_attributes.citizenship &&
+                typeof(obj.person_attributes.citizenship) != "undefined"){
+            citizenship = obj.person_attributes.citizenship;
+        }
       var rows = [
           [
             {
@@ -547,7 +558,7 @@
           [
             {
               field:"Current Address",
-              value:(obj.attributes.country_of_residence != null ? obj.attributes.current_residence : "") + "<br />" +
+              value: country_of_residence + "<br />" +
                     (obj.addresses.current_residence != null ? obj.addresses.current_residence : "") + "<br />" +
                     (obj.addresses.current_village != null ? obj.addresses.current_village : "") + "<br />" +
                     (obj.addresses.current_ta != null ? obj.addresses.current_ta : "") + "<br />" +
@@ -556,7 +567,7 @@
             },
             {
               field:"Home Address",
-              value:(obj.attributes.citizenship != null ? obj.attributes.citizenship : "") + "<br />" +
+              value:((obj.person_attributes.citizenship != null && obj.person_attributes.citizenship != undefined) ? obj.person_attributes.citizenship : "") + "<br />" +
                     (obj.addresses.home_village != null ? obj.addresses.home_village : "") + "<br />" +
                     (obj.addresses.home_ta != null ? obj.addresses.home_ta : "") + "<br />" +
                     (obj.addresses.home_district != null ? obj.addresses.home_district : ""),
