@@ -118,8 +118,7 @@
           
           newPatient.onmousedown = function(){
             window.location = "/new_patient?given_name=" + __$("given_name").value.trim() + 
-                "&family_name=" + __$("family_name").value.trim() + "&gender=" +
-                __$("gender").value.trim();
+                "&family_name=" + __$("family_name").value.trim() + "&gender=F";
           }
           
           footer.appendChild(newPatient);
@@ -257,7 +256,7 @@
                     // if(this.getAttribute("local") == true){
                     
                     document.forms[0].setAttribute("action", "/dde/process_scan_data");
-                      
+
                     /*} else {
                       document.forms[0].setAttribute("action", "/process_result");
                     }*/
@@ -458,7 +457,8 @@
               Gender
             </td>
             <td>
-              <select condition = 'false' id="gender" name="gender" value="F" helpText="Gender" >
+              <select condition="false" id="gender" name="gender" value="" helpText="Gender" >
+                <option></option>
                 <option value="F">Female</option>
                 <option value="M">Male</option>
               </select>

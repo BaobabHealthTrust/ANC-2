@@ -4,6 +4,10 @@ ActionController::Routing::Routes.draw do |map|
   
   # ------------------------------- INSTALLATION GENERATED ----------------------------------------------------
   map.clinic  '/clinic', :controller => 'dde', :action => 'index'
+  map.duplicates  '/duplicates', :controller => 'dde', :action => 'duplicates'
+  map.dde_search_by_name  '/dde_search_by_name', :controller => 'dde', :action => 'search_by_name'
+  map.dde_search_by_id  '/dde_search_by_id', :controller => 'dde', :action => 'search_by_id'
+  map.push_merge  '/push_merge', :controller => 'dde', :action => 'push_merge'
   map.process_result '/process_result', :controller => 'dde', :action => 'process_result'
   map.process_data '/process_data/:id', :controller => 'dde', :action => 'process_data'
   map.search '/search', :controller => 'dde', :action => 'search_name'

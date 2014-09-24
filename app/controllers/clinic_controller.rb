@@ -13,7 +13,7 @@ class ClinicController < GenericClinicController
 
     # raise session.to_yaml
 
-    render :layout => 'dynamic-dashboard'
+    render :layout => 'dashboard'
   end
 
   def reports

@@ -80,25 +80,10 @@
               Current Address:
             </div>
             <div class="cell  input_cell no_bottom">
-              <% if ((@json["addresses"]["current_residence"].present?) rescue false)%>
-                    <%= @json["addresses"]["current_residence"] rescue nil %><br/>
-              <%end%>
-
-              <% if ((@json["addresses"]["current_village"].present?) rescue false)%>
-                <%= @json["addresses"]["current_village"] rescue nil %><br/>
-              <% end %>
-
-              <% if ((@json["addresses"]["current_ta"].present?) rescue false)%>
-                  <%= @json["addresses"]["current_ta"] rescue nil %><br/>
-              <% end %>
-
-              <% if ((@json["addresses"]["current_district"].present?) rescue false)%>
-                  <%=@json["addresses"]["current_district"] rescue nil %><br/>
-              <% end %>
-
-              <% if ((@json["attributes"]["country_of_residence"].present?) rescue false)%>
-                  <%= @json["attributes"]["country_of_residence"] rescue nil %><br/>
-              <% end %>
+              <%= @json["addresses"]["current_residence"] rescue nil %><br/>
+              <%= @json["addresses"]["current_village"] rescue nil %><br/>
+              <%= @json["addresses"]["current_ta"] rescue nil %><br/>
+              <%= @json["addresses"]["current_district"] rescue nil %>
               &nbsp;
             </div>
             <div class="cell">
@@ -111,23 +96,9 @@
               Home Address:
             </div>
             <div class="cell input_cell no_bottom">
-
-              <% if ((@json["addresses"]["home_village"].present?) rescue false)%>
-                  <%= @json["addresses"]["home_village"] rescue nil %><br/>
-              <%end%>
-
-              <% if ((@json["addresses"]["home_ta"].present?) rescue false)%>
-                  <%= @json["addresses"]["home_ta"] rescue nil %><br/>
-              <%end%>
-
-              <% if ((@json["addresses"]["home_district"].present?) rescue false)%>
-                  <%= @json["addresses"]["home_district"] rescue nil %><br/>
-              <%end%>
-
-              <% if ((@json["attributes"]["citizenship"].present?) rescue false)%>
-                  <%= @json["attributes"]["citizenship"] rescue nil %><br/>
-              <%end%>
-
+              <%= @json["addresses"]["home_village"] rescue nil %><br/>
+              <%= @json["addresses"]["home_ta"] rescue nil %><br/>
+              <%= @json["addresses"]["home_district"] rescue nil %>
               &nbsp;
             </div>
           </div>
@@ -392,9 +363,9 @@
           aXMLHttpRequest.status == 304)) {
                   
         var result = aXMLHttpRequest.responseText;
-
+        
         people = JSON.parse(result);
-
+        
         if(__$("btnSelect")){
           __$("btnSelect").className = "button_gray";
           __$("btnSelect").removeAttribute("onclick");
@@ -479,6 +450,9 @@
             ul.appendChild(li);
           }
         }
+        
+        
+        
     }    
   }
     
@@ -486,7 +460,7 @@
     if(__$("matched")){
       __$("matched").innerHTML = "";
       
-      var obj = JSON.parse(people[parseInt(pos)]);      
+      var obj = JSON.parse(people[parseInt(pos)]);         
       
       if(__$("btnSelect")){
         __$("btnSelect").className = "button_green";
@@ -502,11 +476,11 @@
           }
         }
       }
-
+             
       if(__$("btnUpdate")){
-
-        var obj = JSON.parse(people[pos]);
-
+      
+        var obj = JSON.parse(people[pos]);      
+          
         if(obj["_id"] != null){
             
           __$("btnUpdate").className = "button_blue";
