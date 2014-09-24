@@ -49,8 +49,8 @@ class DdeController < ApplicationController
     
     end 
     
-    patient_id = DDE.search_and_or_create(json.to_json) rescue nil 
-    
+    patient_id = DDE.search_and_or_create(json.to_json)# rescue nil
+
     json = JSON.parse(params["person"]) rescue {}
     
     patient = Patient.find(patient_id) rescue nil
@@ -93,7 +93,9 @@ class DdeController < ApplicationController
       "person_attributes" => {
           "occupation" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Occupation").id).value rescue nil),
           "cell_phone_number" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Cell Phone Number").id).value rescue nil),
+          "office_phone_number" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Office Phone Number").id).value rescue nil),
           "home_phone_number" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Home Phone Number").id).value rescue nil),
+          "country_of_residence" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Country of Residence").id).value rescue nil),
           "race" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Race").id).value rescue nil),
           "citizenship" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Citizenship").id).value rescue nil)
       },
@@ -277,7 +279,9 @@ class DdeController < ApplicationController
       "person_attributes" => {
           "occupation" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Occupation").id).value rescue nil),
           "cell_phone_number" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Cell Phone Number").id).value rescue nil),
+          "office_phone_number" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Office Phone Number").id).value rescue nil),
           "home_phone_number" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Home Phone Number").id).value rescue nil),
+          "country_of_residence" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Country of Residence").id).value rescue nil),
           "race" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Race").id).value rescue nil),
           "citizenship" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Citizenship").id).value rescue nil)
       },
@@ -383,15 +387,15 @@ class DdeController < ApplicationController
         @results << result
               
         patient = PatientIdentifier.find_by_identifier(@json["national_id"]).patient rescue nil
-      
-        if !patient.nil?  
-          
+
+        if !patient.nil?
+
           national_id = ((patient.patient_identifiers.find_by_identifier_type(PatientIdentifierType.find_by_name("National id").id).identifier rescue nil) || params[:id])
-          
+
           name = patient.person.names.last rescue nil
-          
+
           address = patient.person.addresses.last rescue nil
-      
+
           verifier = {
               "national_id" => national_id,
               "patient_id" => (patient.patient_id rescue nil),
@@ -404,7 +408,9 @@ class DdeController < ApplicationController
               "person_attributes" => {
                   "occupation" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Occupation").id).value rescue nil),
                   "cell_phone_number" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Cell Phone Number").id).value rescue nil),
+                  "office_phone_number" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Office Phone Number").id).value rescue nil),
                   "home_phone_number" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Home Phone Number").id).value rescue nil),
+                  "country_of_residence" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Country of Residence").id).value rescue nil),
                   "race" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Race").id).value rescue nil),
                   "citizenship" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Citizenship").id).value rescue nil)
               },
@@ -423,7 +429,7 @@ class DdeController < ApplicationController
                   "home_district" => (address.address2 rescue nil)
               }
             }.to_json
-                          
+
           checked = DDE.compare_people(result, verifier) # rescue false
           
           if checked    
@@ -451,15 +457,15 @@ class DdeController < ApplicationController
     
       patient = PatientIdentifier.find_by_identifier(@json["national_id"]).patient rescue nil
     
-      if !patient.nil?  
+      if !patient.nil?
         @results = []
-         
+
         national_id = ((patient.patient_identifiers.find_by_identifier_type(PatientIdentifierType.find_by_name("National id").id).identifier rescue nil) || params[:id])
-        
+
         name = patient.person.names.last rescue nil
-        
+
         address = patient.person.addresses.last rescue nil
-    
+
         @results << {
             "national_id" => national_id,
             "patient_id" => (patient.patient_id rescue nil),
@@ -473,6 +479,8 @@ class DdeController < ApplicationController
                 "occupation" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Occupation").id).value rescue nil),
                 "cell_phone_number" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Cell Phone Number").id).value rescue nil),
                 "home_phone_number" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Home Phone Number").id).value rescue nil),
+                "office_phone_number" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Office Phone Number").id).value rescue nil),
+                "country_of_residence" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Country of Residence").id).value rescue nil),
                 "race" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Race").id).value rescue nil),
                 "citizenship" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Citizenship").id).value rescue nil)
             },
@@ -491,7 +499,7 @@ class DdeController < ApplicationController
                 "home_district" => (address.address2 rescue nil)
             }
           }.to_json
-           
+
         @dontstop = true
         
       else
@@ -542,7 +550,9 @@ class DdeController < ApplicationController
             "person_attributes" => {
                 "occupation" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Occupation").id).value rescue nil),
                 "cell_phone_number" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Cell Phone Number").id).value rescue nil),
+                "office_phone_number" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Office Phone Number").id).value rescue nil),
                 "home_phone_number" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Home Phone Number").id).value rescue nil),
+                "country_of_residence" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Country of Residence").id).value rescue nil),
                 "race" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Race").id).value rescue nil),
                 "citizenship" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Citizenship").id).value rescue nil)
             },
@@ -572,7 +582,7 @@ class DdeController < ApplicationController
   end
   
   def process_confirmation
-  
+
     @json = params[:person] rescue {}
     
     @results = []
@@ -580,13 +590,13 @@ class DdeController < ApplicationController
     settings = YAML.load_file("#{Rails.root}/config/dde_connection.yml")[Rails.env] rescue {}
     
     target = params[:target]
-    
+
     target = "update" if target.blank?
-    
+
     if !@json.blank?    
       @results = RestClient.post("http://#{settings["dde_username"]}:#{settings["dde_password"]}@#{settings["dde_server"]}/process_confirmation", {:person => @json, :target => target}, {:accept => :json})    
     end
-    
+
     render :text => @results  
   end
   

@@ -1,7 +1,7 @@
 module DDE
  
     def self.search_and_or_create(json)
-    
+
       raise "Argument expected to be a JSON Object" if (JSON.parse(json) rescue nil).nil?
 
       person = JSON.parse(json) rescue {}
@@ -12,29 +12,34 @@ module DDE
       gender = person["gender"] == "F" ? "Female" : "Male"
 
       passed = {
-         "person"=>{"occupation"=>(person["person_attributes"]["occupation"] rescue nil),
-         "age_estimate"=> ((person["birthdate_estimated"] rescue false).to_s.downcase == "true" ? 1 : 0),
-         "cell_phone_number"=>(person["person_attributes"]["cell_phone_number"] rescue nil),
-         "birth_month"=> birthdate_month ,
-         "addresses"=>{"address1"=>(person["addresses"]["current_residence"] rescue nil),
-              "address2"=>(person["addresses"]["home_district"] rescue nil),
-              "city_village"=>(person["addresses"]["current_village"] rescue nil),
-              "state_province"=>(person["addresses"]["current_district"] rescue nil),
-              "neighborhood_cell"=>(person["addresses"]["home_village"] rescue nil),
-              "township_division"=>(person["addresses"]["current_ta"] rescue nil),
-              "county_district"=>(person["addresses"]["home_ta"] rescue nil)},
-         "gender"=> gender ,
-         "patient"=>{"identifiers"=>{"National id" => ((person["national_id"] || person["_id"]) || person["_id"])}},
-         "birth_day"=>birthdate_day,
-         "home_phone_number"=>(person["person_attributes"]["home_phone_number"] rescue nil),
-         "names"=>{"family_name"=>(person["names"]["family_name"] rescue nil),
-         "given_name"=>(person["names"]["given_name"] rescue nil),
-         "middle_name"=>""},
-         "birth_year"=>birthdate_year},
-         "filter_district"=>"",
-         "filter"=>{"region"=>"",
-         "t_a"=>""},
-         "relation"=>""
+         "person"=>{
+           "occupation"=>(person["attributes"]["occupation"] rescue nil),
+           "age_estimate"=> ((person["birthdate_estimated"] rescue false).to_s.downcase == "true" ? 1 : 0),
+           "home_phone_number"=>(person["attributes"]["home_phone_number"] rescue nil),
+           "cell_phone_number"=>(person["attributes"]["cell_phone_number"] rescue nil),
+           "office_phone_number"=>(person["attributes"]["office_phone_number"] rescue nil),
+           "race"=>(person["attributes"]["race"] rescue nil),
+           "citizenship"=>(person["attributes"]["citizenship"] rescue nil),
+           "country_of_residence"=>(person["attributes"]["country_of_residence"] rescue nil),
+           "birth_month"=> birthdate_month ,
+           "addresses"=>{"address1"=>(person["addresses"]["current_residence"] rescue nil),
+                "address2"=>(person["addresses"]["home_district"] rescue nil),
+                "city_village"=>(person["addresses"]["current_village"] rescue nil),
+                "state_province"=>(person["addresses"]["current_district"] rescue nil),
+                "neighborhood_cell"=>(person["addresses"]["home_village"] rescue nil),
+                "township_division"=>(person["addresses"]["current_ta"] rescue nil),
+                "county_district"=>(person["addresses"]["home_ta"] rescue nil)},
+           "gender"=> gender ,
+           "patient"=>{"identifiers"=>{"National id" => ((person["national_id"] || person["_id"]) || person["_id"])}},
+           "birth_day"=>birthdate_day,
+           "names"=>{"family_name"=>(person["names"]["family_name"] rescue nil),
+           "given_name"=>(person["names"]["given_name"] rescue nil),
+           "middle_name"=>""},
+           "birth_year"=>birthdate_year},
+           "filter_district"=>"",
+           "filter"=>{"region"=>"",
+           "t_a"=>""},
+           "relation"=>""
         }
         
       # Check if this patient exists locally
@@ -96,11 +101,13 @@ module DDE
               "home_district" => (address.address2 rescue nil)
             }, 
             "person_attributes"=>{
-              "occupation" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Occupation").id).value rescue nil),
-              "cell_phone_number" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Cell Phone Number").id).value rescue nil),
-              "home_phone_number" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Home Phone Number").id).value rescue nil),
-              "race" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Race").id).value rescue nil),
-              "citizenship" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Citizenship").id).value rescue nil)
+                "occupation" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Occupation").id).value rescue nil),
+                "cell_phone_number" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Cell Phone Number").id).value rescue nil),
+                "office_phone_number" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Office Phone Number").id).value rescue nil),
+                "home_phone_number" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Home Phone Number").id).value rescue nil),
+                "country_of_residence" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Country of Residence").id).value rescue nil),
+                "race" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Race").id).value rescue nil),
+                "citizenship" => (patient.person.person_attributes.find_by_person_attribute_type_id(PersonAttributeType.find_by_name("Citizenship").id).value rescue nil)
             }, 
             "patient"=>{
               "identifiers"=>(patient.patient_identifiers.collect{|id| {id.type.name => id.identifier} if id.type.name.downcase != "national id"}.delete_if{|x| x.nil?} rescue [])
@@ -164,6 +171,8 @@ module DDE
           {"cell_phone_number" => "Cell Phone Number"},
           {"home_phone_number" => "Home Phone Number"},
           {"race" => "Race"},
+          {"office_phone_number" => "Office Phone Number"},
+          {"country_of_residence" => "Country of Residence"},
           {"citizenship" => "Citizenship"}
         ]
       
@@ -254,8 +263,9 @@ module DDE
 		  address_params = params["addresses"]
 		  names_params = params["names"]
 		  patient_params = params["patient"]
-		  params_to_process = params.reject{|key,value| key.match(/addresses|patient|names|relation|cell_phone_number|home_phone_number|office_phone_number|agrees_to_be_visited_for_TB_therapy|agrees_phone_text_for_TB_therapy/) }
-		  birthday_params = params_to_process.reject{|key,value| key.match(/gender/) }
+		  params_to_process = params.reject{|key,value| key.match(/addresses|patient|names|relation|cell_phone_number|home_phone_number|occupation|office_phone_number|agrees_to_be_visited_for_TB_therapy|agrees_phone_text_for_TB_therapy|person_attributes|race|citizenship|country_of_residence/) }
+
+      birthday_params = params_to_process.reject{|key,value| key.match(/gender/) }
 		  person_params = params_to_process.reject{|key,value| key.match(/birth_|age_estimate|occupation|identifiers|attributes/) }
 
 		  if person_params["gender"].to_s == "Female"
@@ -294,6 +304,18 @@ module DDE
 		  person.person_attributes.create(
 		    :person_attribute_type_id => PersonAttributeType.find_by_name("Home Phone Number").person_attribute_type_id,
 		    :value => params["home_phone_number"]) unless params["home_phone_number"].blank? rescue nil
+
+      person.person_attributes.create(
+          :person_attribute_type_id => PersonAttributeType.find_by_name("Race").person_attribute_type_id,
+          :value => params["race"]) unless params["race"].blank? rescue nil
+
+      person.person_attributes.create(
+          :person_attribute_type_id => PersonAttributeType.find_by_name("Citizenship").person_attribute_type_id,
+          :value => params["citizenship"]) unless params["citizenship"].blank? rescue nil
+
+      person.person_attributes.create(
+          :person_attribute_type_id => PersonAttributeType.find_by_name("Country of Residence").person_attribute_type_id,
+          :value => params["country_of_residence"]) unless params["country_of_residence"].blank? rescue nil
 
       # TODO handle the birthplace attribute
 

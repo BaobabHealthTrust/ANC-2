@@ -1471,7 +1471,27 @@ module ANCService
     end
 
     def residence
-      "#{self.person.addresses.first.city_village}" rescue nil
+      rs = "#{self.person.addresses.first.city_village}" rescue nil
+      if rs.blank?
+        rs = self.country_of_residence
+      end
+      return rs
+    end
+
+
+    def country_of_residence
+      rs = self.person.person_attributes.find_last_by_person_attribute_type_id(
+          PersonAttributeType.find_by_name("Country of Residence")
+      ).value  rescue nil
+      return rs
+    end
+
+
+    def citizenship
+      rs = self.person.person_attributes.find_last_by_person_attribute_type_id(
+          PersonAttributeType.find_by_name("Citizenship")
+      ).value  rescue nil
+      return rs
     end
 
     def fundus(today = Date.today)
