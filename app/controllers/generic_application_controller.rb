@@ -24,15 +24,15 @@ class GenericApplicationController < ActionController::Base
 	helper :all
 	helper_method :next_task
 	filter_parameter_logging :password
-	before_filter :authenticate_user!, :except => ['login', 'logout','remote_demographics',
+	before_filter :authenticate_user!, :except => ['login', 'logout','remote_demographics','remote_app_search','remotely_reassign_new_identifier',
 		                                      'create_remote', 'mastercard_printable', 'report', 'probe_lmp', 'get_token', 'test_enc']
 
-    before_filter :set_current_user, :except => ['login', 'logout','remote_demographics',
+    before_filter :set_current_user, :except => ['login', 'logout','remote_demographics','remote_app_search','remotely_reassign_new_identifier',
 		                                      'create_remote', 'mastercard_printable',  'report', 'probe_lmp', 'get_token', 'test_enc']
 
-	before_filter :location_required, :except => ['login', 'logout', 'location',
+	before_filter :location_required, :except => ['login', 'logout', 'location','remote_app_search',
 		                                        'demographics','create_remote',  'report', 'probe_lmp',
-		                                         'mastercard_printable',
+		                                         'mastercard_printable','remotely_reassign_new_identifier',
 		                                        'remote_demographics', 'get_token', 'single_sign_in', 'test_enc']
   
 	def rescue_action_in_public(exception)

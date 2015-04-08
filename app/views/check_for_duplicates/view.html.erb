@@ -1,0 +1,95 @@
+<!-- {"attributes"=>{"occupation"=>"Office worker", "home_phone_number"=>"Unknown", "cell_phone_number"=>"Unknown", "office_phone_number"=>nil}, "birth_day"=>14, "names"=>{"family_name2"=>nil, "family_name"=>"Two", "given_name"=>"Dummy"}, "addresses"=>{"city_village"=>"Area 14", "neighborhood_cell"=>"Bhenhleni", "state_province"=>"Lilongwe City", "address2"=>"Kasungu", "address1"=>"Other", "county_district"=>"S/C Mnyanja"}, "patient"=>{"identifiers"=>{"Filing number"=>"FN10100002", "National id"=>"P170000000022"}}, "birth_month"=>8, "date_changed"=>"Tue Mar 24 14:10:57 +0200 2015", "birth_year"=>1988, "gender"=>"F"}
+-->
+<style>
+
+a {
+    background-color: #669999;
+    border-bottom: 1px outset black;
+    border-radius: 7px;
+    border-style: outset;
+    border-top: 1px outset black;
+    color: white;
+    display: block;
+    padding: 15px 16px 15px 10px;
+    text-align: center;
+    text-decoration: none;
+  }
+
+  h2,h4 { 
+    padding-left: 40px;
+  }
+
+
+</style>
+<div class="main_container" style="width:100%;height:100%;">
+ <h2>Duplicate patients found:<h4>please select a client who has come to the clinic</h4></h2> 
+  <div class="left_container" style="width:47%;height:98%;float:left;border-style:solid;border-width:1px 1px 1px 0px">
+    <table style="width:100%;">
+      <tr>
+        <th>First name:</th><td><%=@local_person['person']['names']['given_name']%></td>
+      </tr>
+      <tr>
+        <th>Last name:</th><td><%=@local_person['person']['names']['family_name']%></td>
+      </tr>
+      <tr>
+        <th>Gender:</th><td><%=@local_person['person']['gender']%></td>
+      </tr>
+      <tr>
+        <%
+          birth_year = @local_person['person']['birth_year'] 
+          birth_month = @local_person['person']['birth_month'] != 'Unknown' ? @local_person['person']['birth_month'] : '??'
+          birth_day = @local_person['person']['birth_day'] != 'Unknown' ? @local_person['person']['birth_day'] : '?'
+        %>
+        <th>Birthdate:</th><td><%=birth_year%>/<%=birth_month%>/<%=birth_day%></td>
+      </tr>
+      <tr>
+        <th>Home district:</th><td><%=@local_person['person']['addresses']["address2"]%></td>
+      </tr>
+      <tr>
+        <th>Home village:</th><td><%=@local_person['person']['addresses']["county_district"]%></td>
+      </tr>
+      <tr>
+        <th>Current residence:</th><td><%=@local_person['person']['addresses']["city_village"]%></td>
+      </tr>
+    </table>
+    <div style="width: 100%;text-align:center;padding-top:50px;">
+      <a href="/check_for_duplicates/local_print?identifier=<%=params[:identifier]%>">Assign new identifier</a> 
+    </div>
+  </div>
+
+  <div class="left_container" style="height:98%;width:47%;float:right;border-width:1px 0px 1px 1px;border-style:solid;">
+    <table style="width:100%;">
+      <tr>
+        <th>First name:</th><td><%=@remote_person['person']['names']['given_name']%></td>
+      </tr>
+      <tr>
+        <th>Last name:</th><td><%=@remote_person['person']['names']['family_name']%></td>
+      </tr>
+      <tr>
+        <th>Gender:</th><td><%=@remote_person['person']['gender']%></td>
+      </tr>
+      <tr>
+        <%
+          birth_year = @remote_person['person']['birth_year'] 
+          birth_month = @remote_person['person']['birth_month'] != 'Unknown' ? @remote_person['person']['birth_month'] : '??'
+          birth_day = @remote_person['person']['birth_day'] != 'Unknown' ? @remote_person['person']['birth_day'] : '?'
+        %>
+        <th>Birthdate:</th><td><%=birth_year%>/<%=birth_month%>/<%=birth_day%></td>
+      </tr>
+      <tr>
+        <th>Home district:</th><td><%=@remote_person['person']['addresses']["address2"]%></td>
+      </tr>
+      <tr>
+        <th>Home village:</th><td><%=@remote_person['person']['addresses']["county_district"]%></td>
+      </tr>
+      <tr>
+        <th>Current residence:</th><td><%=@remote_person['person']['addresses']["city_village"]%></td>
+      </tr>
+    <table>
+    <div style="width: 100%;text-align:center;padding-top:50px;">
+      <a href="/check_for_duplicates/remote_print?identifier=<%=params[:identifier]%>">Assign new identifier</a> 
+    </div>
+  </div>
+
+
+</div>

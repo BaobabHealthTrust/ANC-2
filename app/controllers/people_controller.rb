@@ -113,11 +113,25 @@ class PeopleController < GenericPeopleController
 		found_person = nil
 		if params[:identifier]    
 			local_results = PatientService.search_by_identifier(params[:identifier])
+
 			if local_results.length > 1
 				redirect_to :action => 'duplicates' ,:search_params => params
         return
 				#@people = PatientService.person_search(params)
 			elsif local_results.length == 1
+
+       ####################################################hack to handle duplicates ########################################################
+        if CoreService.get_global_property_value('search.from.remote.app').to_s == 'true'
+          remote_app_address = CoreService.get_global_property_value('remote.app.address').to_s
+          uri = "http://#{remote_app_address}/check_for_duplicates/remote_app_search?identifier=#{params[:identifier]}"
+          output = RestClient.get(uri) rescue []
+          remote_result = JSON.parse(output) rescue []
+          unless remote_result.blank?
+            redirect_to :controller =>'check_for_duplicates', :action => 'view',
+              :identifier => params[:identifier] and return
+          end
+        end
+        #################################################### end of: hack to handle duplicates ########################################################
 
 				if create_from_dde_server
 
@@ -133,6 +147,7 @@ class PeopleController < GenericPeopleController
 						return
           end
 				end
+
 
 				found_person = local_results.first
         
