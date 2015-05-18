@@ -9,7 +9,7 @@ class PatientIdentifierType < ActiveRecord::Base
       when "National id"
         unless use_moh_national_id
           health_center_id = Location.current_location.site_id
-          national_id_version = "1"
+          national_id_version = "2"
           national_id_prefix = "P#{national_id_version}#{health_center_id.rjust(3,"0")}"
 
           last_national_id = PatientIdentifier.find(:first,:order=>"identifier desc", :conditions => ["identifier_type = ? AND left(identifier,5)= ?", self.patient_identifier_type_id, national_id_prefix])
