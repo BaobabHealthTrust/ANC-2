@@ -1048,8 +1048,9 @@
           </span>
         </button>
 
-        <% parameters =  params.delete_if{|k, v| k.match(/action|controller/)}.collect{|k, v| k + "=" + v}.join("&")  %>
-        <button class="blue" style="width: 140px; float: right; margin: 10px;" onclick="window.location = '/reports/print_report?<%= parameters %>'">
+        <% @parameters =  @parameters.delete_if{|k, v| k.match(/action|controller/)}.collect{|k, v| k + "=" + v}.join("&")
+         %>
+        <button class="blue" style="width: 140px; float: right; margin: 10px;" onclick="window.location = '/reports/print_report?<%= @parameters %>'">
           <span>
             Print
           </span>

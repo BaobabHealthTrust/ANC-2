@@ -57,3 +57,16 @@ B. Installation on existing database
 To clean data anomalies
 
 script/runner script/auto_cleaner.rb
+
+C.  Correcting data inconsistencies
+		
+		1. Set correct drugs on drug sets 
+				a. FeFol (1 tablet) for 30 days
+				b. SP (3 tablets) for 1 day
+
+		2. Pull and update your application
+
+		3. Run the following
+				script/runner script/clean_anc_fansida_patients.rb
+
+		
