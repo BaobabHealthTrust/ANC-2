@@ -59,12 +59,6 @@ class CheckForDuplicatesController < ApplicationController
     new_id = PatientIdentifier.find(:first,:conditions =>["patient_id = ? AND identifier_type = ?",
       patient.id,PatientIdentifierType.find_by_name('National ID').id]).identifier
 
-    #after assigning a new identifier we should make sure that person exisits inn ART
-    person_demographics = PatientService.remote_demographics(patient.person)
-    remote_app_address = CoreService.get_global_property_value('remote.app.address').to_s
-    uri = "http://#{remote_app_address}/check_for_duplicates/create_remote"
-    recieved_params = RestClient.post(uri,person_demographics)
-    ###################################################
     render :text => new_id.to_s and return
   end
 
