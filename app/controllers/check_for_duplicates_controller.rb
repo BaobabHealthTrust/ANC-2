@@ -8,6 +8,7 @@ class CheckForDuplicatesController < ApplicationController
 
     remote_app_address = CoreService.get_global_property_value('remote.app.address').to_s
     uri = "http://#{remote_app_address}/check_for_duplicates/remote_app_search?identifier=#{params[:identifier]}"
+    uri += "&given_name=N/A&family_name=N/A&gender=N/A"
     output = RestClient.get(uri) rescue []
     @remote_person = JSON.parse(output) rescue []
   end
@@ -16,7 +17,7 @@ class CheckForDuplicatesController < ApplicationController
     person = Person.find(:first,:joins => "INNER JOIN patient_identifier i 
       ON i.patient_id = person.person_id AND i.voided = 0 AND person.voided=0
       INNER JOIN person_name n ON n.person_id=person.person_id AND n.voided = 0",
-      :conditions => ["identifier = ? AND n.given_name <> ? AND n.family_name <> ? AND gender <> ?",
+      :conditions => ["identifier = ? AND NOT (n.given_name = ? AND n.family_name = ? AND gender = ?)",
       params[:identifier],params[:given_name],params[:family_name],params[:gender]])
 
     unless person.blank?

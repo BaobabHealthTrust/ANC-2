@@ -124,11 +124,13 @@ class PeopleController < GenericPeopleController
         person_to_be_chcked = PatientService.demographics(Person.find(local_results.first[:person_id].to_i))
         if CoreService.get_global_property_value('search.from.remote.app').to_s == 'true'
           remote_app_address = CoreService.get_global_property_value('remote.app.address').to_s
-          uri = "http://#{remote_app_address}/check_for_duplicates/remote_app_search?identifier=#{params[:identifier]}"
-          uri += "&given_name=#{person_to_be_chcked['person']['names']['given_name']}"
-          uri += "&family_name=#{person_to_be_chcked['person']['names']['family_name']}"
-          uri += "&gender=#{person_to_be_chcked['person']['gender']}"
-          output = RestClient.get(uri) rescue []
+          uri = "http://#{remote_app_address}/check_for_duplicates/remote_app_search"
+          search_from_remote_params =  {"identifier" => params[:identifier],
+            "given_name" => person_to_be_chcked['person']['names']['given_name'],
+            "family_name" => person_to_be_chcked['person']['names']['family_name'],
+            "gender" => person_to_be_chcked['person']['gender'] }
+
+          output = RestClient.post(uri,search_from_remote_params) rescue []
           remote_result = JSON.parse(output) rescue []
           unless remote_result.blank?
             redirect_to :controller =>'check_for_duplicates', :action => 'view',
