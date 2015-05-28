@@ -16,7 +16,7 @@ class CheckForDuplicatesController < ApplicationController
     person = Person.find(:first,:joins => "INNER JOIN patient_identifier i 
       ON i.patient_id = person.person_id AND i.voided = 0 AND person.voided=0
       INNER JOIN person_name n ON n.person_id=person.person_id AND n.voided = 0",
-      :conditions => ["identifier = ? AND n.given_name = ? AND n.family_name = ? AND gender = ?",
+      :conditions => ["identifier = ? AND n.given_name <> ? AND n.family_name <> ? AND gender <> ?",
       params[:identifier],params[:given_name],params[:family_name],params[:gender]])
 
     unless person.blank?
