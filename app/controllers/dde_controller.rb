@@ -10,7 +10,7 @@ class DdeController < ApplicationController
     application_name = @settings["application_name"].strip rescue ""
     return_uri = session[:return_uri]
 
-    if !return_uri.blank? && application_name.match("bart")
+    if !return_uri.blank? && (application_name.downcase.match("bart") || application_name.downcase.strip == "art")
       session[:return_uri] = []
       redirect_to return_uri.to_s
       return
