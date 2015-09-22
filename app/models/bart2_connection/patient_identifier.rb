@@ -125,10 +125,18 @@ class Bart2Connection::PatientIdentifier < ActiveRecord::Base
     if (!patient_params.nil?)
       patient = person.create_patient
 
-      patient_params["identifiers"].each { |identifier_type_name, identifier|
+      patient_params["identifiers"].each {|p_identifier|
+		p_identifier = p_identifier.to_a.flatten	
+	
+		identifier_type_name = p_identifier[0]
+		identifier = p_identifier[1]
+		uuid = self.connection.select_one("SELECT UUID() as uuid")["uuid"]
+
         next if identifier.blank?
         identifier_type = Bart2Connection::PatientIdentifierType.find_by_name(identifier_type_name) || Bart2Connection::PatientIdentifierType.find_by_name("Unknown id")
-        patient.patient_identifiers.create("identifier" => identifier, "identifier_type" => identifier_type.patient_identifier_type_id)
+        patient.patient_identifiers.create("identifier" => identifier,
+											"identifier_type" => identifier_type.patient_identifier_type_id,
+											"uuid" => uuid)
       } if patient_params["identifiers"]
 
       # This might actually be a national id, but currently we wouldn't know
