@@ -15,26 +15,83 @@ class Bart2Connection::PatientIdentifier < ActiveRecord::Base
 
     return people.first unless people.blank?
 
-    create_from_dde_server = CoreService.get_global_property_value('create.from.dde.server').to_s == "true" rescue false
-    
-    if create_from_dde_server
+    create_from_dde_server = CoreService.get_global_property_value('create.from.dde.server').to_s == "true"
+    create_from_dde2_server = File.exist?('config/dde_connection.yml')
+
+    proceed = false
+    if create_from_dde_server && !create_from_dde2_server
       dde_server = GlobalProperty.find_by_property("dde_server_ip").property_value rescue ""
       dde_server_username = GlobalProperty.find_by_property("dde_server_username").property_value rescue ""
       dde_server_password = GlobalProperty.find_by_property("dde_server_password").property_value rescue ""
       uri = "http://#{dde_server_username}:#{dde_server_password}@#{dde_server}/people/find.json"
       uri += "?value=#{identifier}"
       p = JSON.parse(RestClient.get(uri)).first rescue nil
-      
+
       national_id = p['person']["value"] rescue nil
       old_national_id = (p["person"]["data"]["patient"]["identifiers"]["old_identification_number"] || p["person"]["old_identification_number"]) rescue nil
-      
+
+    elsif create_from_dde2_server
+
+      @settings = YAML.load_file("#{Rails.root}/config/dde_connection.yml")[Rails.env] # rescue {}
+      uri = "http://#{(@settings["dde_username"])}:#{(@settings["dde_password"])}@#{(@settings["dde_server"])}/ajax_process_data"
+      post_data = {
+          "person" => {
+             "national_id" => identifier
+          }
+      }
+
+      p = JSON.parse(RestClient.post(uri, post_data))
+
+      if p.length == 1
+        p =JSON.parse(p[0])
+        national_id = p["_id"]
+        old_national_id = p["old_identification_number"]
+      end
+
+      birthdate_year = p["birthdate"].to_date.year rescue "Unknown"
+      birthdate_month = p["birthdate"].to_date.month rescue nil
+      birthdate_day = p["birthdate"].to_date.day rescue nil
+      birthdate_estimated = p["birthdate_estimated"] rescue nil
+      gender = p["gender"] == "F" ? "Female" : "Male"
+
+      passed = {
+          "person"=>{"occupation"=>p["person_attributes"]["occupation"],
+                     "age_estimate"=> birthdate_estimated,
+                     "cell_phone_number"=>p["person_attributes"]["cell_phone_number"],
+                     "birth_month"=> birthdate_month ,
+                     "addresses"=>{"address1"=>p["addresses"]["current_residence"],
+                                   "address2"=>p["addresses"]["home_district"],
+                                   "city_village"=>p["addresses"]["current_village"],
+                                   "state_province"=>p["addresses"]["current_district"],
+                                   "neighborhood_cell"=> p["addresses"]['home_village'],
+                                   "township_division" => p["addresses"]['current_ta'],
+                                   "county_district"=>p["addresses"]["home_ta"]
+                     },
+                     "gender"=> gender ,
+                     "patient"=>{"identifiers"=>{"National id" => p["_id"]}},
+                     "birth_day"=>birthdate_day,
+                     "home_phone_number"=>p["person_attributes"]["home_phone_number"],
+                     "names"=>{"family_name"=>p["names"]["family_name"],
+                               "given_name"=>p["names"]["given_name"],
+                              },
+                     "birth_year"=>birthdate_year},
+          "filter_district"=>"",
+          "filter"=>{"region"=>"",
+                     "t_a"=>""},
+          "relation"=>""
+      }
+      return [self.create_from_form(passed["person"])].first
+    end
+
+    if create_from_dde_server
+
       if !old_national_id.blank? and (old_national_id != national_id)
         art_npid = self.find_all_by_identifier_and_identifier_type(old_national_id,
           PatientIdentifierType.find_by_name("National id").id)
- 
+
         if !art_npid.blank?
           patient = art_npid.first.patient
-                    
+
           patient.patient_identifiers.create(
             :identifier_type => PatientIdentifierType.find_by_name("Old Identification Number").id,
             :identifier => old_national_id,
@@ -46,7 +103,7 @@ class Bart2Connection::PatientIdentifier < ActiveRecord::Base
             :identifier => national_id,
             :uuid => self.connection.select_one("SELECT UUID() as uuid")["uuid"]
           )
-          
+
           art_npid.each do |npid|
             npid.voided = true
             npid.voided_by = 1
@@ -56,9 +113,9 @@ class Bart2Connection::PatientIdentifier < ActiveRecord::Base
           end
 
           return art_npid.first.patient.person
-        end        
+        end
       end
-      
+
       return [] if p.blank?
 
       birthdate_year = p["person"]["birthdate"].to_date.year rescue "Unknown"
