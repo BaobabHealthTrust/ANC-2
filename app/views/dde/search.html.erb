@@ -194,7 +194,7 @@
       
       function ajaxSearch(page){      
           var url = "/ajax_search?given_name=" + __$("given_name").value.trim() + 
-              "&family_name=" + __$("family_name").value.trim() + "&gender=" + 
+              "&family_name=" + __$("family_name").value.trim() + "&gender=F" +
                __$("gender").value.trim() + "&page=" + page;
                  
           if(__$("nextButton")){
