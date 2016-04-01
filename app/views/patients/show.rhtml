@@ -261,7 +261,7 @@ next_task = task.encounter_type.gsub('_',' ') rescue nil
             <option link="/patients/outcome/?patient_id=<%= @patient.id %>" ttSize = "160px">Update Outcome</option>
 
             <%
-            if (@patient.hiv_positive? rescue false)
+            if (!@patient.cant_go_to_art? && @patient.hiv_positive? rescue false)
               if current_user.activities.include?("HIV Reception") %>
 
                 <option link="<%= "http://#{@art_link}/single_sign_on/single_sign_in?current_time=#{

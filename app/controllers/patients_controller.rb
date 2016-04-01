@@ -1443,12 +1443,22 @@ class PatientsController < ApplicationController
   end
   
   def go_to_art
+
+    if @patient.cant_go_to_art?
+      redirect_to "/patients/show/#{@patient.id}" and return
+    end
+
     @patient = Patient.find(session[:patient_id]) if @patient.blank?
   end
 
   def proceed_to_pmtct
+
     @patient = Patient.find(session[:patient_id]) if @patient.blank?
-    @anc_patient = ANCService::ANC.new(@patient) rescue nil      
+    @anc_patient = ANCService::ANC.new(@patient) rescue nil
+
+    if params["to art"] == "No"
+      redirect_to "/patients/confirm_pmtct_cancel/#{@patient.id}" and return
+    end
 
     if (params["to art"].downcase == "yes" rescue false) || (params["to_art"].downcase == "yes" rescue false)
       
@@ -1763,6 +1773,11 @@ class PatientsController < ApplicationController
         observation.save
       end
     end
+  end
+
+
+  def confirm_pmtct_cancel
+      @patient = Patient.find(params[:id])
   end
 
   private

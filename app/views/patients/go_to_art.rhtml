@@ -1,7 +1,7 @@
 <script type="text/javascript" language="javascript">
   <!--
   tt_cancel_show = "/patients/show/<%= @patient.id %>";
-  tt_cancel_destination = "/patients/show/<%= @patient.id %>";
+  tt_cancel_destination = "/patients/confirm_pmtct_cancel/<%= @patient.id %>";
 
   function readableMessage(){
 
@@ -17,9 +17,9 @@
   }
 
   function transformMessages(){
-    //buildConceptsHash();
     setTimeout(function(){ readableMessage()}, 100);
   }
+
   //-->
 </script>
 
@@ -30,8 +30,9 @@
   <%= select_tag "to art",
     options_for_select([["", ""], ["Yes", "Yes"], ["No", "No"]]),
     {
+    :id => 'yesno',
     :helptext => "Do you want to proceed to PMTCT Care?",
-    :tt_onLoad => "transformMessages();"
-  } %>
+    :tt_onLoad => "transformMessages();",
+   } %>
 
 <% end %>

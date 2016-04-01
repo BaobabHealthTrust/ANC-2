@@ -116,8 +116,10 @@ class EncountersController < ApplicationController
         @patient_identifier = @patient.patient_identifiers.create(identifier)
       end
     end
+
+    if (File.exist?("config/dde_connection.yml"))
     
-    if((CoreService.get_global_property_value("create.from.dde.server") == true) && !@patient.nil?)
+    elsif((CoreService.get_global_property_value("create.from.dde.server") == true) && !@patient.nil?)
       dde_patient = DDEService::Patient.new(@patient)
       identifier = dde_patient.get_full_identifier("National id").identifier rescue nil
       national_id_replaced = dde_patient.check_old_national_id(identifier)

@@ -111,7 +111,7 @@ class ApplicationController < GenericApplicationController
     same_database = (CoreService.get_global_property_value("same_database") == "true" ? true : false) rescue false
 
     # Get patient id mapping
-    if @anc_patient.hiv_status.downcase == "positive" && 
+    if @anc_patient.hiv_status.downcase == "positive" &&
         session["patient_id_map"]["#{(session[:datetime] || Time.now()).to_date.strftime("%Y-%m-%d")}"][@patient.id].nil?
 
       session["proceed_to_art"] = {} if session["proceed_to_art"].nil?
@@ -137,7 +137,6 @@ class ApplicationController < GenericApplicationController
 
       art_link = CoreService.get_global_property_value("art_link") rescue nil
       anc_link = CoreService.get_global_property_value("anc_link") rescue nil
-
       # Check ART if valid
       if !art_link.nil? && !anc_link.nil? # && foreign_links.include?(pos)
         if !session[:token]
@@ -156,9 +155,7 @@ class ApplicationController < GenericApplicationController
         @external_encounters = Bart2Connection::PatientIdentifier.search_by_identifier(@anc_patient.national_id).patient.encounters.find(:all,
           :conditions => ["encounter_datetime = ?", (session[:datetime] || Time.now()).to_date.strftime("%Y-%m-%d")]).collect{|e| e.type.name}
 
-        # raise @external_encounters.to_yaml
-      
-      
+
         session["patient_vitals_map"] = {} if session["patient_vitals_map"].nil?
         session["patient_vitals_map"]["#{(session[:datetime] || Time.now()).to_date.strftime("%Y-%m-%d")}"] = {} if session["patient_vitals_map"]["#{(session[:datetime] || Time.now()).to_date.strftime("%Y-%m-%d")}"].nil?
 
@@ -239,16 +236,15 @@ class ApplicationController < GenericApplicationController
 
           session["patient_vitals_map"]["#{(session[:datetime] || Time.now()).to_date.strftime("%Y-%m-%d")}"][@patient.id] = true
         end
-      
-        additional_tasks = {}
 
+        additional_tasks = {}
         if (!session["proceed_to_art"]["#{(session[:datetime] || Time.now()).to_date.strftime("%Y-%m-%d")}"].nil? and
               session["proceed_to_art"]["#{(session[:datetime] || Time.now()).to_date.strftime("%Y-%m-%d")}"][@patient.id].nil? and
               !@external_encounters.collect{|u| u.downcase}.include?("hiv reception"))
 
           additional_tasks["HIV Reception"] = [flow["HIV Reception".downcase], "/patients/go_to_art?patient_id=#{@patient.id}",
             "HIV RECEPTION", nil, nil, "TODAY", nil, false, (current_user_activities.collect{|u| u.downcase}.include?("hiv reception") &&
-                @anc_patient.hiv_status.downcase == "positive")]
+                @anc_patient.hiv_status.downcase == "positive")] unless @anc_patient.patient.cant_go_to_art?
         
         end
       

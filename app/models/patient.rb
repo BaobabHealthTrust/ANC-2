@@ -27,6 +27,16 @@ class Patient < ActiveRecord::Base
     self.encounters.each {|row| row.void(reason) }
   end
 
+  def cant_go_to_art?
+
+    concept_id = ConceptName.find_by_name("Reason for exiting care").concept_id
+    arv_resist = Observation.find_last_by_concept_id_and_person_id(concept_id, self.id)
+
+    arv_resist && arv_resist.answer_string.present? &&
+        ((arv_resist.obs_datetime.to_date == Date.today) ||
+            (arv_resist.obs_datetime.to_date < Date.today && arv_resist.answer_string.strip != "Not Willing")) || false
+  end
+
   def get_full_identifier(identifier)
     PatientIdentifier.find(:first,:conditions =>["voided = 0 AND identifier_type = ? AND patient_id = ?",
         PatientIdentifierType.find_by_name(identifier).id, self.patient.id]) rescue nil
