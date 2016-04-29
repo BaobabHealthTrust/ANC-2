@@ -1,171 +1,173 @@
 <%
-task = @next_task
-next_task = task.encounter_type.gsub('_',' ') rescue nil
+   task = @next_task
+   next_task = task.encounter_type.gsub('_',' ') rescue nil
 
 %>
 <script type="text/javascript" language="javascript">
-  <!--
-  tt_cancel_show = "/clinic";
-  tt_cancel_destination = "/clinic";
-  
-  var start_time = [
-<%= (@time rescue Time.now).year %>, 
-<%= (@time rescue Time.now).month - 1 %>,
-<%= (@time rescue Time.now).day %>,
-<%= (@time rescue Time.now).hour %>,
-<%= (@time rescue Time.now).min %>
-  ];
-  
-  function showNexttask(){
-    if(!__$("nextTask")){
-      var pos = checkCtrl(__$("details"));
-      // [w, h, t, l]
-        
-      var nextTask = document.createElement("nextTask");
-      nextTask.id = "nextTask";
-      nextTask.style.position = "absolute";
-      nextTask.style.left = "48%";
-      nextTask.style.top = (pos[2] + pos[1] - 30) + "px";
-        
-      document.body.appendChild(nextTask);
-    }
-    
-    __$("nextTask").innerHTML = "<b>Next Task:</b><br /><i><%= next_task %></i>";
-  }
-  
-  alerted = 0;
-  function createAlert(){
+    <!--
+    tt_cancel_show = "/clinic";
+    tt_cancel_destination = "/clinic";
 
-    var msgDiv = document.createElement("div");
-    msgDiv.id = "msg-div";
-    msgDiv.innerHTML = "Patient needs an HIV test!";
-    document.body.appendChild(msgDiv);
-    hideMsg("msg-div")
-    alerted = 1;
-  }
+    var start_time = [
+        <%= (@time rescue Time.now).year %>,
+        <%= (@time rescue Time.now).month - 1 %>,
+        <%= (@time rescue Time.now).day %>,
+        <%= (@time rescue Time.now).hour %>,
+        <%= (@time rescue Time.now).min %>
+    ];
 
-  function hideMsg(div){
-    
-    setTimeout(function(){fade(div, 1);}, 3500);
-  }
+    function showNexttask(){
+        if(!__$("nextTask")){
+            var pos = checkCtrl(__$("details"));
+            // [w, h, t, l]
 
-  function fade(div, opacity){
-    __$(div).style.opacity = opacity;
-    if (opacity >= 0){    
-      opacity = opacity - 0.01;
-      setTimeout(function(){fade(div, opacity)}, 20)
-    }else{
-      __$(div).style.display = "none";
-      __$(div).parentNode.removeChild(__$(div));
-    }
-  }
-  
-  function showTime(){
-    if(!__$("timeCtrl")){
-      var timeCtrl = document.createElement("timeCtrl");
-      timeCtrl.id = "timeCtrl";
-      timeCtrl.style.position = "absolute";
-        
-      document.body.appendChild(timeCtrl);     
-    }
-    
-    if(__$("timeCtrl")){
-      var pos = checkCtrl(__$("details"));
-      var timeCtrl = __$("timeCtrl");
-      timeCtrl.style.right = 15 + "px";
-      timeCtrl.style.top = (pos[2] + pos[1] - 25) + "px";
-      
-      if(__$("nextTask")){
-        var nextTask = __$("nextTask");
-        nextTask.style.left = "48%"
-        nextTask.style.top = (pos[2] + pos[1] - 30) + "px";
-      }
+            var nextTask = document.createElement("nextTask");
+            nextTask.id = "nextTask";
+            nextTask.style.position = "absolute";
+            nextTask.style.left = "48%";
+            nextTask.style.top = (pos[2] + pos[1] - 30) + "px";
 
-      var current_time = new Date();
-      var start = new Date(start_time[0], start_time[1], start_time[2], start_time[3], start_time[4]);      
-      var diff = current_time - start;
-      var hrs = Math.floor(diff / (60 * 60 * 1000));
-      var mins = Math.round(((diff % (60 * 60 * 1000)) / (60 * 60 * 1000)) * 60);
-      var duration = "<div class='table' style='margin: 5px; margin-left: 35px;'><div class='row'>" + (hrs > 0 ? "<div class='cell' " + 
-        "style='font-size: 1.2em; vertical-align: middle;'>" + hrs + "</div>" : "") + 
-        " <div class='cell' style='font-size: 0.5em; vertical-align: middle;'><sup>" + mins + "</sup>&frasl;<sub>60</sub></div>" + 
-        "<div class='cell' style=' vertical-align: middle; font-size: 1.2em;'> hrs</div></div></div>";
-      
-      __$("timeCtrl").innerHTML = duration;
+            document.body.appendChild(nextTask);
+        }
+
+        __$("nextTask").innerHTML = "<b>Next Task:</b><br /><i><%= next_task %></i>";
     }
 
- 
-    setTimeout("showTime()", 1000);
-<% if @alert_for_hiv_test %>
-      if(alerted == 0)
-        createAlert();
-<% end%>
-  }
+    alerted = 0;
+    function createAlert(){
 
-  setTimeout("showTime()", 500);
+        var msgDiv = document.createElement("div");
+        msgDiv.id = "msg-div";
+        msgDiv.innerHTML = "Patient needs an HIV test!";
+        document.body.appendChild(msgDiv);
+        hideMsg("msg-div")
+        alerted = 1;
+    }
 
-<%  if !next_task.nil? %>
+    function hideMsg(div){
+
+        setTimeout(function(){fade(div, 1);}, 3500);
+    }
+
+    function fade(div, opacity){
+        __$(div).style.opacity = opacity;
+        if (opacity >= 0){
+            opacity = opacity - 0.01;
+            setTimeout(function(){fade(div, opacity)}, 20)
+        }else{
+            __$(div).style.display = "none";
+            __$(div).parentNode.removeChild(__$(div));
+        }
+    }
+
+    function showTime(){
+        if(!__$("timeCtrl")){
+            var timeCtrl = document.createElement("timeCtrl");
+            timeCtrl.id = "timeCtrl";
+            timeCtrl.style.position = "absolute";
+
+            document.body.appendChild(timeCtrl);
+        }
+
+        if(__$("timeCtrl")){
+            var pos = checkCtrl(__$("details"));
+            var timeCtrl = __$("timeCtrl");
+            timeCtrl.style.right = 15 + "px";
+            timeCtrl.style.top = (pos[2] + pos[1] - 25) + "px";
+
+            if(__$("nextTask")){
+                var nextTask = __$("nextTask");
+                nextTask.style.left = "48%"
+                nextTask.style.top = (pos[2] + pos[1] - 30) + "px";
+            }
+
+            var current_time = new Date();
+            var start = new Date(start_time[0], start_time[1], start_time[2], start_time[3], start_time[4]);
+            var diff = current_time - start;
+            var hrs = Math.floor(diff / (60 * 60 * 1000));
+            var mins = Math.round(((diff % (60 * 60 * 1000)) / (60 * 60 * 1000)) * 60);
+            var duration = "<div class='table' style='margin: 5px; margin-left: 35px;'><div class='row'>" + (hrs > 0 ? "<div class='cell' " +
+                    "style='font-size: 1.2em; vertical-align: middle;'>" + hrs + "</div>" : "") +
+                    " <div class='cell' style='font-size: 0.5em; vertical-align: middle;'><sup>" + mins + "</sup>&frasl;<sub>60</sub></div>" +
+                    "<div class='cell' style=' vertical-align: middle; font-size: 1.2em;'> hrs</div></div></div>";
+
+            __$("timeCtrl").innerHTML = duration;
+        }
+
+
+        setTimeout("showTime()", 1000);
+        <% if @alert_for_hiv_test %>
+        if(alerted == 0)
+            createAlert();
+        <% end%>
+    }
+
+    <% if session[:datetime].blank? %>
+    setTimeout("showTime()", 500);
+    <% end %>
+
+    <%  if !next_task.nil? %>
     setTimeout("showNexttask()", 500);
-<% end %>
-  //-->
+    <% end %>
+    //-->
 </script>
 
 <style type="text/css">
-  .table {
-    display: table;
-  }
-  .row {
-    display: table-row;
-  }
+    .table {
+        display: table;
+    }
+    .row {
+        display: table-row;
+    }
 
-  .cell {
-    display: table-cell;
-  }
+    .cell {
+        display: table-cell;
+    }
 
-  #msg-div{
-    position: absolute;
-    left: 47%;
-    top: 41.5%;
-    font-weight: bold;
-    background: red;
-    z-index: 100;
-    width: 20%;
-    padding: 10px;
-    padding-top: 5px;
-    font-size: 1.5em;
-    height: 8%;
-    text-align: center;
-    vertical-align: middle;
-    border-radius: 5px;
-  }
+    #msg-div{
+        position: absolute;
+        left: 47%;
+        top: 41.5%;
+        font-weight: bold;
+        background: red;
+        z-index: 100;
+        width: 20%;
+        padding: 10px;
+        padding-top: 5px;
+        font-size: 1.5em;
+        height: 8%;
+        text-align: center;
+        vertical-align: middle;
+        border-radius: 5px;
+    }
 
-  #timeCtrl {
-    border-radius: 50px;
-    border: 1px solid #ccc;
-    width: 180px; 
-    height: 60px;
-    font-size: 36px; 
-    background-color: rgb(153, 238, 153); 
-    color: rgb(0, 0, 0); 
-    opacity: 0.95; 
-    z-index: 100; 
-    text-align: center;
-    -moz-user-select: none;
-  }
+    #timeCtrl {
+        border-radius: 50px;
+        border: 1px solid #ccc;
+        width: 180px;
+        height: 60px;
+        font-size: 36px;
+        background-color: rgb(153, 238, 153);
+        color: rgb(0, 0, 0);
+        opacity: 0.95;
+        z-index: 100;
+        text-align: center;
+        -moz-user-select: none;
+    }
 
-  #nextTask {
-    border-radius: 50px;
-    border: 1px solid #ccc;
-    width: 260px;
-    height: 50px;
-    font-size: 18px;
-    background-color: #efc; 
-    color: rgb(0, 0, 0); 
-    opacity: 0.95; 
-    z-index: 100; 
-    text-align: center;
-    -moz-user-select: none;
-  }
+    #nextTask {
+        border-radius: 50px;
+        border: 1px solid #ccc;
+        width: 260px;
+        height: 50px;
+        font-size: 18px;
+        background-color: #efc;
+        color: rgb(0, 0, 0);
+        opacity: 0.95;
+        z-index: 100;
+        text-align: center;
+        -moz-user-select: none;
+    }
 </style>
 <form id = 'dashboard' action=''>
   <table cellpadding=10>
@@ -184,7 +186,7 @@ next_task = task.encounter_type.gsub('_',' ') rescue nil
         <span id='patient_id'>
           <%= @anc_patient.national_id %>
         </span>
-        <span id='patient_residence'>
+       <span id='patient_residence'>
           <%= @anc_patient.residence %>
         </span>
         <span id='patient_age'>
@@ -199,82 +201,84 @@ next_task = task.encounter_type.gsub('_',' ') rescue nil
         </div-->
         <select id="links">
           <% if current_user.activities.include?("Obstetric History") ||
-              current_user.activities.include?("Medical History") ||
-              current_user.activities.include?("Surgical History") ||
-              current_user.activities.include?("Social History") %>
-            <option value='/patients/patient_history/?patient_id=<%= @patient.id  %>'>Patient History</option>
+                  current_user.activities.include?("Medical History") ||
+                  current_user.activities.include?("Surgical History") ||
+                  current_user.activities.include?("Social History") %>
+              <option value='/patients/patient_history/?patient_id=<%= @patient.id  %>'>Patient History</option>
           <% end %>
 
           <% if current_user.activities.include?("ANC Visit Type") %>
-            <option value='/patients/<%= (!@current_encounter_names.include?("ANC VISIT TYPE") ?
-                        "visit_type" : "current_visit") %>/?patient_id=<%= @patient.id  %>'>Current Visit</option>
-                  <% end %>
+              <option value='/patients/<%= (!@current_encounter_names.include?("ANC VISIT TYPE") ?
+                      "visit_type" : "current_visit") %>/?patient_id=<%= @patient.id  %>'>Current Visit</option>
+          <% end %>
 
           <% if current_user.activities.include?("Registration") %>
-            <option value='/dde/edit_patient?patient_id=<%= @patient.id %>'>Demographics</option>
+              <option value='/patients/demographics?patient_id=<%= @patient.id %>'>Demographics</option>
           <% end %>
         </select>
         <select id="tabs">
           <option value='/patients/tab_visit_summary?patient_id=<%= @patient.id  %>'>Visit Summary</option>
 
           <% if current_user.activities.include?("Obstetric History") %>
-            <option value='/patients/tab_obstetric_history?patient_id=<%= @patient.id  %>'
-                    <%= (@obstretrics_alert ? " alertTab='true'" : (@obstetrics_selected ? " selectedTab='true'" : "")) %> >
-              Obstetric History</option>
+              <option value='/patients/tab_obstetric_history?patient_id=<%= @patient.id  %>'
+                      <%= (@obstretrics_alert ? " alertTab='true'" : (@obstetrics_selected ? " selectedTab='true'" : "")) %> >
+                Obstetric History</option>
           <% end %>
 
           <% if current_user.activities.include?("Medical History") %>
-            <option value='/patients/tab_medical_history?patient_id=<%= @patient.id  %>'
-                    <%= (@medics_alert ? " alertTab='true'" : (@medics_selected ? " selectedTab='true'" : "")) %> >
-              Medical History</option>
+              <option value='/patients/tab_medical_history?patient_id=<%= @patient.id  %>'
+                      <%= (@medics_alert ? " alertTab='true'" : (@medics_selected ? " selectedTab='true'" : "")) %> >
+                Medical History</option>
           <% end %>
 
           <% if current_user.activities.include?("Social History") %>
-            <option value='/patients/tab_social_history?patient_id=<%= @patient.id  %>'
-                    <%= (@social_alert ? " alertTab='true'" : (@social_selected ? " selectedTab='true'" : "")) %> >
-              Social History</option>
+              <option value='/patients/tab_social_history?patient_id=<%= @patient.id  %>'
+                      <%= (@social_alert ? " alertTab='true'" : (@social_selected ? " selectedTab='true'" : "")) %> >
+                Social History</option>
           <% end %>
 
           <% if current_user.activities.include?("Lab Results") %>
-            <option value='/patients/tab_lab_results?patient_id=<%= @patient.id  %>'
-                    <%= (@labs_alert == true ? " alertTab='true'" : (@labs_selected == true ? " selectedTab='true'" : "")) %> >Lab Results</option>
-                  <% end %>
+              <option value='/patients/tab_lab_results?patient_id=<%= @patient.id  %>'
+                      <%= (@labs_alert == true ? " alertTab='true'" : (@labs_selected == true ? " selectedTab='true'" : "")) %> >Lab Results</option>
+          <% end %>
 
           <% if current_user.activities.include?("Obstetric History") %>
-            <option value='/patients/tab_detailed_obstetric_history?patient_id=<%= @patient.id  %>'>Detailed Obstetric History</option>
+              <option value='/patients/tab_detailed_obstetric_history?patient_id=<%= @patient.id  %>'>Detailed Obstetric History</option>
           <% end %>
 
           <% if current_user.activities.include?("Current Pregnancy") %>
-            <option value='/patients/tab_visit_history?patient_id=<%= @patient.id  %>'>Current Pregnancy</option>
+              <option value='/patients/tab_visit_history?patient_id=<%= @patient.id  %>'>Current Pregnancy</option>
           <% end %>
+
+          <option value='/patients/tab_printouts?patient_id=<%= @patient.id  %>'>Printouts</option>
 
         </select>
         <select id="navigation_links">
           <!--option link="/encounter_types?patient_id=<%= @patient.id  %>" ttSize = "160px">Tasks</option-->
+          <%
+             if !@patient.cant_go_to_art? && (@patient.in_bart? && (@patient.hiv_positive? rescue false))
+               if current_user.activities.include?("HIV Reception") %>
+
+                  <option link="<%= "http://#{@art_link}/single_sign_on/single_sign_in?current_time=#{
+                  (session[:datetime] || Time.now()).to_date.strftime("%Y-%m-%d")}&location=#{
+                  (!session[:location_id].nil? and !session[:location_id].blank? ? session[:location_id] : "721")}&" +
+                                            "return_uri=http://#{@anc_link}/patients/next_url?patient_id=#{@patient.id}&destination_uri=http://#{@art_link}" +
+                                            "/patients/print_demographics/#{session["patient_id_map"]["#{
+                                            (session[:datetime] || Time.now()).to_date.strftime("%Y-%m-%d")}"][@patient.id]}&auth_token=#{
+                                            session[:token]}" %>" ttSize = "160px">Print ART Visit</option>
+              <% end %>
+
+              <option link="/patients/proceed_to_pmtct?patient_id=<%= @patient.id  %>&to_art=yes" ttSize = "160px">ART</option>
+          <% end %>
 
           <% if !@next_task.nil? && @next_task.url != "/patients/show/#{@patient.id}" %>
 
-            <option link="<%= @next_task.url  %>" ttSize = "160px">Continue</option>
+              <option link="<%= @next_task.url  %>" ttSize = "160px">Continue</option>
 
           <% else %>
 
-            <option link="/patients/outcome/?patient_id=<%= @patient.id %>" ttSize = "160px">Update Outcome</option>
+              <option link="/patients/outcome/?patient_id=<%= @patient.id %>" ttSize = "160px">Update Outcome</option>
 
-            <%
-            if (!@patient.cant_go_to_art? && @patient.hiv_positive? rescue false)
-              if current_user.activities.include?("HIV Reception") %>
-
-                <option link="<%= "http://#{@art_link}/single_sign_on/single_sign_in?current_time=#{
-                (session[:datetime] || Time.now()).to_date.strftime("%Y-%m-%d")}&location=#{
-                (!session[:location_id].nil? and !session[:location_id].blank? ? session[:location_id] : "721")}&" +
-                  "return_uri=http://#{@anc_link}/patients/next_url?patient_id=#{@patient.id}&destination_uri=http://#{@art_link}" +
-                  "/patients/print_demographics/#{session["patient_id_map"]["#{
-                (session[:datetime] || Time.now()).to_date.strftime("%Y-%m-%d")}"][@patient.id]}&auth_token=#{
-                        session[:token]}" %>" ttSize = "160px">Print ART Visit</option>
-                      <% end %>
-
-              <option link="/patients/proceed_to_pmtct?patient_id=<%= @patient.id  %>&to_art=yes" ttSize = "160px">ART</option>
-            <% end %>
           <%end%>
 
         </select>

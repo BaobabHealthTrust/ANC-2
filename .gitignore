@@ -5,6 +5,7 @@
 config/database.yml
 config/settings.yml
 config/application.yml
+Reports
 notes
 doc
 development.sql
@@ -15,3 +16,4 @@ mockups
 nbproject
 .project
 *.lock
+.idea/*

@@ -206,7 +206,7 @@
     newElement.value = "<%= @patient.patient_id %>";
     submitForm.appendChild(newElement);
       
-    submitForm.action= "/prescriptions/prescribe";
+    submitForm.action= "/prescriptions/prescribe?auto_flow=<%= params[:auto_flow]%>";
     finish(submitForm);
   }
   

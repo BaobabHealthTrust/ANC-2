@@ -1523,7 +1523,7 @@ function loadInputWindow(){
                     "Year of abortion" : ["number", min_birth_year, abs_max_birth_year] ,
                     "Place of abortion" : ["list", "Health facility", "In transit", "TBA", "Home", "Other"],
                     "Type of abortion" : ["list", "Complete abortion", "Incomplete abortion"],
-                    "Procedure done" : ["list", "Manual Vacuum Aspiration (MVA)", "Evacuation"],
+                    "Procedure done" : ["list", "Manual Vacuum Aspiration (MVA)", "Evacuation", "None"],
                     "Gestation (months)" : ["number", 0, 7]
                    
                 };

@@ -24,4 +24,7 @@ class Bart2Connection::Patient < ActiveRecord::Base
     self.encounters.each {|row| row.void(reason) }
   end
 
+  def national_id
+    self.patient_identifiers.find_by_identifier_type(PatientIdentifierType.find_by_name("National id").id).identifier rescue nil
+  end
 end

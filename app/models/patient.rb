@@ -95,4 +95,25 @@ class Patient < ActiveRecord::Base
         EncounterType.find_by_name("Current Pregnancy").id, start_date.to_date, end_date.to_date]).encounter_datetime rescue nil
   end
 
+  def in_bart?
+
+    available = Bart2Connection::PatientIdentifier.find_by_identifier_and_identifier_type(self.national_id,
+    Bart2Connection::PatientIdentifierType.find_by_name("National id").id)
+
+   !available.blank?
+  end
+
+  def arv_number
+    self.patient_identifiers.find_by_identifier_type(
+        PatientIdentifierType.find_by_name("ARV Number").id
+    ).identifier rescue nil
+  end
+
+  def remote_count
+    Bart2Connection::PatientIdentifier.all(:conditions => ["identifier_type = ? AND identifier = ? AND voided = 0",
+                                                          Bart2Connection::PatientIdentifierType.find_by_name("National id").id,
+                                                          self.national_id
+      ]).count rescue 0
+  end
+
 end

@@ -1,0 +1,44 @@
+<style type="text/css">
+  td #Unknown {
+    display: none;
+  }
+</style>
+<script type="text/javascript" language="javascript">
+
+  tt_cancel_show = "/patients/show/<%= @patient.id %>";
+  tt_cancel_destination = "/patients/show/<%= @patient.id %>";
+  var timedEvent;
+
+</script>
+
+<style>
+    .nota #na {
+        display: block;
+    }
+    #Unknown {
+        display: none;
+    }
+</style>
+
+<% form_tag :controller => "patients", :action => "create_or_update_arv_number" do |f| %>
+
+    <%= hidden_field_tag "patient_id", @patient.id %>
+
+    <%= touch_select_tag "On ART", @patient,
+                         options_for_select([["", ""], ["Yes", "Yes"], ["No", "No"]]),
+       {:id => "on_art",
+        :helptext => "Is Patient On ART? <span class='helper'> ART Details</span>",
+        :tt_onUnLoad => "parsedConceptName = '';",
+        :tt_onLoad => " parsedConceptName = 'On ART';"
+       } %>
+
+    <%= touch_text_field_tag "ARV Number", @patient, nil,
+       {:id => "arv_number",
+        :optional => true,
+        :helptext => "ARV Number <span class='helper'> ART Details</span>",
+        :tt_onUnLoad => "parsedConceptName = '';",
+        :condition => "__$('on_art').value == 'Yes'"
+       } %>
+
+  <%= submit_tag 'Finish' %>
+<% end %>

@@ -1,0 +1,72 @@
+<script>
+    tt_cancel_destination = "/?active_tab=tab2";
+    function loadRemoteDetails(npid){
+        __$("iframe").src = '/people/remote_people?npid=' + npid;
+    }
+</script>
+
+<style>
+    #Unknown {
+    display: none;
+    }
+    th{
+        text-align: left;
+    }
+    .even, .odd{
+        cursor: pointer;
+    }
+    .even td, .odd td{
+        padding: 5px;
+    }
+
+    .even td{
+        background-color: white;
+    }
+
+    .odd td{
+        background-color: #EEEEE7;
+    }
+   th{
+       background-color: #4A7B6F;
+       border-radius: 1px;
+       color: white;
+   }
+   td{
+       color: #242E35;
+   }
+</style>
+
+<div style="width: 100%; overflow:auto;font-size: 1.2em;">
+    <table style="width:100%;border: 1px solid gray">
+        <tr>
+            <td style="width:60%;overflow:auto;">
+                <div style="height:90vh;;overflow:auto;">
+                    <table style="width:100%;border-left: 1px solid gray">
+                        <tr class="header">
+                        <th>Patient Name</th>
+                        <th>National ID</th>
+                        <th>Date of Birth</th>
+                        <th>Date Registered</th>
+                        <th>Remote Count</th>
+                        </tr>
+                        <% @local_patients.each do |patient, name|%>
+                            <tr class="<%=cycle('even', 'odd')%>" onclick="loadRemoteDetails('<%= patient.national_id%>')">
+                            <td><%= name%></td>
+                            <td><%= patient.national_id%></td>
+                            <td><%= patient.person.birthdate.strftime("%d %b, %Y")%></td>
+                            <td><%= patient.person.date_created.strftime("%d %b, %Y")%></td>
+                            <td><%= patient.remote_count%></td>
+                            </tr>
+                        <% end %>
+                    </table>
+                </div>
+            </td>
+            <td style="width:40%;vertical-align: top;">
+                <div style="height:90vh;overflow:auto;">
+                    <iframe id="iframe" style="width:100%;border: none;">
+                    </iframe>
+                </div>
+            </td>
+        </tr>
+    </table>
+</div>

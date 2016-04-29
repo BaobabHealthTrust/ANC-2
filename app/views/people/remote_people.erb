@@ -1,0 +1,58 @@
+<script>
+    tt_cancel_destination = "/?active_tab=tab2";
+    function loadRemoteDetails(npid){
+        __$("iframe").src = '/people/remote_people?npid=' + npid;
+    }
+</script>
+
+<style>
+    #Unknown {
+    display: none;
+    }
+    th{
+        text-align: left;
+    }
+    .even, .odd{
+        cursor: pointer;
+    }
+    .even td, .odd td{
+        padding: 5px;
+    }
+    #content{
+        border: none;
+    }
+    h2{
+        background-color: #4A7B6F;
+        border-radius: 1px;
+        color: white;
+    }
+
+    .even td{
+        background-color: white;
+    }
+
+    .odd td{
+        background-color: #EEEEE7;
+    }
+</style>
+  <h2 style="width:100%;">Remote Details</h2>
+<% @patients.each do |patient|%>
+    <table style="width: 100%; overflow:auto;font-size: 1.2em;border: 1px dotted black;">
+        <tr class="even">
+            <th>National ID:</th>
+            <th><%= patient.national_id%></th>
+        </tr>
+        <tr class="odd">
+            <td>Name:</td>
+            <td><%= patient.person.names.last.given_name + ' ' + patient.person.names.last.family_name %></td>
+        </tr>
+        <tr class="even">
+            <td>Date of Birth:</td>
+            <td><%= patient.person.birthdate.strftime("%d %b, %Y") %></td>
+        </tr>
+        <tr class="odd">
+            <td>Date created:</td>
+            <td><%= patient.person.date_created.strftime("%d %b, %Y") %></td>
+        </tr>
+    </table>
+<% end %>

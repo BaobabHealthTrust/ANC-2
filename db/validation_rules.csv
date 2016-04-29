@@ -1,0 +1,13 @@
+type_id,expr,desc
+1,{observations_total} == {week_of_first_visit_2} + {week_of_first_visit_1} + {week_of_first_visit_unknown},Women who started ANC visit before and after week 12 and those with unknown start week should sum up to all women in cohort
+1,{observations_total} == {pre_eclampsia_no} + {pre_eclampsia_1},Women with eclampsia and women without eclampsia should add up to all women in cohort
+1,{observations_total} == {ttv__total_previous_doses_1} + {ttv__total_previous_doses_2},Women who received TTV less than 2 doses and women who received TTV atleast 2 doses should  sum to all women in cohort
+1,{observations_total} == {fansida__sp___number_of_tablets_given_0} + {fansida__sp___number_of_tablets_given_1} + {fansida__sp___number_of_tablets_given_2} + {fansida__sp___number_of_tablets_given_more_than_2},Women who received no dose of Fansidar SP and women who received doses of SP (1 X 2 and 2 X 3) should add up to all women in cohort
+1,{observations_total} == {fefo__number_of_tablets_given_2} + {fefo__number_of_tablets_given_1},Women who received 120+ tablets of FEFO and women who received less than 120 tablets of FEFO should sum up to all women in cohort
+1,{observations_total} == {albendazole} + {albendazole_more_than_1} + {albendazole_none},Women who received various doses of albendazole and those who received none should add up to all women cohort
+1,{observations_total} == {bed_net} + {no_bed_net},Women who received ITN (bed nets) and women who received no bed nets should add up to all women in cohort 
+1,{observations_total} == {syphilis_result_neg} + {syphilis_result_pos} + {syphilis_result_unk},Women with negative syphilis status and women with positive status and those with unknown syphilis status should sum up to all women in cohort
+1,{observations_total} == {first_visit_hiv_test_result_prev_negative} + {first_visit_hiv_test_result_prev_positive} + {first_visit_new_negative} + {first_visit_new_positive} + {first_visit_hiv_not_done},Women with various HIV status should add up to all women  in cohort
+1,{total_hiv_positive} == {on_cpt__1} + {no_cpt__1},Women who received CPT and women who did not receive CPT should add up to all women in cohort
+1,{total_hiv_positive} == {nvp_baby__1} + {no_nvp_baby__1},Women who received NVP Syrup for baby and women who received none should add up to all women in cohort
+1,{total_hiv_positive} == {first_visit_not_on_art} + {first_visit_on_art_before} + {first_visit_on_art_zero_to_27} + {first_visit_on_art_28_plus},Women with various ART status should add up to women with HIV status positive

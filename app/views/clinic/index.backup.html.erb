@@ -27,7 +27,7 @@
   <div id="location"><%= @location rescue "" %></div>
 
   <div id="date"><%= @date rescue "" %></div>
-  <div id="user"><%= @user.name  rescue "" %></div>
+  <div id="user"><%= @user.name  rescue (@user.class.to_s  == "String" ? @user : nil) %></div>
 
   <select id="links">
     <option value='/logout' link='/logout'>Logout</option>

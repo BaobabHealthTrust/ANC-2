@@ -94,6 +94,51 @@
         }
       }
 
+      function expandDiv(url, id){
+
+          if(id.trim().length > 0){
+
+              if(__$(id).style.display == "none"){
+
+                  if(__$("__" + id)){
+                      __$("__" + id).style.display = "none";
+                  }
+                  ajaxify(url, id,  "__$(id).style.display = 'block'")
+                  return "/images/minus.png";
+              } else {
+                  __$(id).style.display = "none";
+                  if(__$("__" + id)){
+                      __$("__" + id).style.display = "block";
+                  }
+                  return "/images/plus.png";
+              }
+          }
+      }
+
+      function ajaxify(url, id, expr){
+
+          var httpRequest = new XMLHttpRequest();
+          httpRequest.onreadystatechange = function() {
+
+              if (httpRequest && httpRequest.readyState == 4 && (httpRequest.status == 200 ||
+                      httpRequest.status == 304)) {
+
+                    var result = JSON.parse(httpRequest.responseText);
+
+                    for (var i in result){
+
+                        __$(result[i]["eid"]+ "_name").innerHTML = ((parseInt(i) + 1) + ". " +
+                                result[i]["name"] + " <i> (" + result[i]["date"] + ")</i>");
+                        __$(result[i]["eid"]+ "_obs").innerHTML = result[i]["obs"];
+                    }
+                  eval(expr);
+              }
+          };
+          try {
+              httpRequest.open('GET', url, true);
+              httpRequest.send(null);
+          } catch(e){}
+      }
       //-->
     </script>
   </head>
@@ -131,57 +176,53 @@
                     </div>
                   </div>
 
-                  <% @patients.each do |patient| %>
-                    <% patient = ANCService::ANC.new(patient) %>
+                  <% @data.each do |arr| %>
                     <div class="row">
                       <div class="cell">
-                        <%= patient.national_id rescue "&nbsp;" %>
+                        <%= arr[0] %>
                       </div>
                       <div class="cell">
-                        <%= patient.name rescue "" %>
+                        <%= arr[1] %>
                       </div>
                       <div class="cell">
-                        <%= patient.patient.date_registered(session[:report_start_date], session[:report_end_date]).strftime("%d/%b/%Y") rescue "&nbsp"%>
+                        <%= arr[2]%>
                       </div>
                       <div class="cell">
-                        <%= patient.birthdate_formatted rescue "" %>
+                        <%= arr[3] %>
                       </div>
                       <div class="cell" style="vertical-align: top; padding: 0px;">
                         <div class="table">
                           <div class="row">
                             <div style="display: table-cell; padding: 0px; padding-left: 10px; padding-right: 10px;">
-                              <img onclick="this.src=expand('<%= patient.national_id rescue "" %>')"
+                              <img onclick="this.src=expandDiv(('patient_encounters?patient_id=<%= arr[5]%>'), '<%= arr[5] %>')"
                                    style="height: 32px; width: 32px; cursor: pointer;"
                                    src="/images/plus.png" />
                             </div>
-                            <div id="<%= "__" + patient.national_id rescue "" %>"
+                            <div id="<%= "__" + arr[5].to_s %>"
                                  style="display: block; display: table-cell; vertical-align: middle; font-size: 1.5em;">
-                              <%= patient.patient.encounters.length %>
+                              <%= arr[4].length %>
                             </div>
-                            <div id="<%= patient.national_id rescue "" %>" style="display: table-cell; display: none; width: 100%;">
-                              <% pos = 0 %>
+                            <div id="<%= arr[5] %>" style="display: table-cell; display: none; width: 100%;">
 
-                              <% patient.patient.encounters.each do |encounter| %>
-                                <% pos = pos + 1 %>
+                              <% arr[4].each_with_index do |encounter, p| %>
 
-                                <div style="display: table; width: 100%;">
+                                <div id = "<%= encounter%>" style="display: table; width: 100%;">
                                   <div style="display: table-row;">
                                     <div style="display: table-cell;">
-                                      <%= "<b style='color: #333; float: left;'>" + pos.to_s + ". "+
-                                        (encounter.type.name.titleize rescue "&nbsp;") + " <i>(" +
-                                        (encounter.encounter_datetime.strftime("%d/%b/%Y") rescue "&nbsp;") +
-                                        ")</i></b>" %>
+                                        <b id= "<%= encounter%>_name" style='color: #333; float: left; padding: 10px;'> </b>
                                     </div>
                                     <div style="display: table-cell;">
-                                      <img onclick="this.src=expand('<%= (patient.national_id rescue "") + "_" + pos.to_s %>')"
-                                           style="height: 32px; width: 32px; cursor: pointer; float: right; margin-left: 20px;"
+
+                                      <img onclick="this.src=expand('<%= encounter%>_obs')"
+                                           style="height: 32px; width: 32px; cursor: pointer; float: right; margin-left: 20px; padding: 10px;"
                                            src="/images/plus.png" />
                                     </div>
                                   </div>
                                 </div>
-                                <%= ("<div id='" + (patient.national_id rescue "") + "_" + pos.to_s +
-                                    "' style='margin: 20px; border-radius: 10px; background-color: #ee6; padding: 10px; display: none;'>" +
-                                    encounter.to_s + "</div><br />" rescue "&nbsp;") if !encounter.to_s.nil? %>
+                                  <div id= "<%= encounter%>_obs" style="display: table-cell;display:none;margin:20px;border-radius: 10px;
+                                          background-color:#ee6; padding: 10px;">
+
+                                  </div>
                               <% end %>
                             </div>
                           </div>
@@ -196,12 +237,12 @@
         </table>
       </div>
       <div id="nav">
-        <button class="green" style="float: right; margin: 10px; width: 150px;" onclick="back()">
+        <button class="green" style="float: right; margin: 10px; width: 150px;" onclick="window.history.back()">
           <span>
             Finish
           </span>
         </button>
-        <button class="blue" style="float: right; margin: 10px; width: 150px;" onclick="back()">
+        <button class="blue" style="float: right; margin: 10px; width: 150px;" onclick="window.history.back()">
           <span>
             Back
           </span>

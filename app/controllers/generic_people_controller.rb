@@ -418,14 +418,14 @@ class GenericPeopleController < ApplicationController
     end
 
     if region_id.blank?
-      countries= []
-      File.open(RAILS_ROOT + "/public/data/countries.txt", "r").each{ |ctry|
-        countries << ctry.strip
+      nationalities = []
+      File.open(RAILS_ROOT + "/public/data/nationalities.txt", "r").each{ |nat|
+        nationalities << nat
       }
-      if countries.length > 0
-        countries = (["Mozambique", "Zambia", "Tanzania", "Zimbabwe", "Nigeria", "Namibia"] + countries).uniq
+      if nationalities.length > 0
+        nationalities = (["Mozambican", "Zambian", "Tanzanian", "Zimbambean", "Nigerian", 'Burundian', "Namibian"] + nationalities).uniq
       end
-      districts = countries
+      districts = nationalities
     end
 
     render :text => (districts + ["Other"]).join('|')  and return

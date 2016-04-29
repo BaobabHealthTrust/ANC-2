@@ -1,6 +1,9 @@
 <html>
   <head>
     <title>Current Visit</title>
+    <script>
+
+    </script>
     <style type="text/css">
       body {
         font-family: "Nimbus Sans L", "Arial Narrow", sans-serif;
@@ -124,6 +127,14 @@
         border: 3px inset #000;
       }
 
+      .enc_text{
+          width: 75%;
+          oveflow-x: hidden;
+      }
+      .tick-image{
+        width: 8%;
+      }
+
     </style>
 
   </head>
@@ -137,15 +148,68 @@
 
       <table id="stats" style="margin-bottom: 8px;" cellpadding="5">
         <tr style="color: #fff; background-color: #6281a7;">
-          <th style="width: 40%;">Task</th>
+          <th style="width: 27.75%;">Visit Date</th>
+          <th style="width: 33%;">Task</th>
           <th style="">Details</th>
         </tr>
         <tr>
-          <td colspan="2">
+        <td colspan="3">
+        <div style="height: 235px; overflow: hidden; border: 1px solid #ccc;">
+          <table width="100%" cellpadding="5">
+            <tr>
+              <td style="width: 27%; text-align: left;
+                      vertical-align: top; font-size: 1.5em; color: #1f3b5e;">
+
+                <div style="width: 100%; height: 220px; overflow: auto;">
+
+                  <% dates = [] %>
+                  <%
+                     e = 0
+                     @data.each do |d| %>
+
+                      <% dates << "date#{d}" %>
+
+                      <div id="<%= "date#{d}" %>" style="width: 100%; display: table; border-spacing: 0px;">
+
+                        <div class="date" id="<%= "parent_date#{d}" %>" style="display: table-row;"
+                             onclick="__$('obs').innerHTML = '';checkRadio('date<%= d %>', controlsSet2);
+                                     loadEncounters('<%= d%>')">
+
+                          <div style="display: table-cell; vertical-align: middle; cursor: pointer;
+                                  <%= (e == 0 ? " border-top: 1px dotted #6281a7; " : "") %>
+                                  width: 40px; text-align: center; border-bottom: 1px dotted #6281a7;">
+
+                            <img src="/touchscreentoolkit/lib/images/unchecked.png" height="30"
+                                 alt="O" />
+
+                          </div>
+                          <div style="display: table-cell; vertical-align: middle; cursor: pointer;
+                                  <%= (e == 0 ? " border-top: 1px dotted #6281a7; " : "") %>
+                                  border-bottom: 1px dotted #6281a7; padding: 5px; ">
+
+                            <%= d %>
+
+                            <div style="font-size: 0.5em; font-style: italic;
+                                    vertical-align: middle;">
+
+                            </div>
+
+                          </div>
+                        </div>
+
+                      </div>
+                  <%
+                     e += 1
+                     end %>
+
+                </div>
+
+              </td>
+          <td >
             <div style="height: 235px; overflow: hidden; border: 1px solid #ccc;">
               <table width="100%" cellpadding="5">
                 <tr>
-                  <td style="width: 40%; text-align: left;
+                  <td style="max-width: 46%; width: 47%; text-align: left;
                       vertical-align: top; font-size: 1.25em; color: #1f3b5e;">
 
                     <div id="encounter" style="width: 100%; height: 220px; overflow: auto;">
@@ -154,11 +218,11 @@
                       <% (0..(@encounter_data.length - 1)).each do |e| %>
                         <% controls << "encounter#{@encounter_data[e][0]}" %>
 
-                        <div  id="<%= "encounter#{@encounter_data[e][0]}" %>" style="width: 100%; display: table; border-spacing: 0px;">
+                        <div  class = "encounter <%= @encounter_data[e][4]%>" id="<%= "encounter#{@encounter_data[e][0]}" %>" style="width: 100%; display: table; border-spacing: 0px;">
 
                           <div id="<%= "parent_encounter#{@encounter_data[e][0]}" %>" style="display: table-row;">
 
-                            <div class="<%=  "e#{e}"%>" style="display: table-cell; vertical-align: middle; cursor: pointer;
+                            <div class="tick-image <%=  "e#{e}"%>" style="display: table-cell; vertical-align: middle; cursor: pointer;
                             <%= (e == 0 ? " border-top: 1px dotted #6281a7; " : "") %>
                                  width: 40px; text-align: center; border-bottom: 1px dotted #6281a7;"
                                  onclick="__$('obs').innerHTML = '';checkRadio('encounter<%= @encounter_data[e][0] %>', controlsSet1);
@@ -168,7 +232,7 @@
                                    alt="O" />
 
                             </div>
-                            <div style="display: table-cell; vertical-align: middle; cursor: pointer;
+                            <div class="enc_text" style="display: table-cell; vertical-align: middle; cursor: pointer;
                             <%= (e == 0 ? " border-top: 1px dotted #6281a7; " : "") %>
                                  border-bottom: 1px dotted #6281a7; padding: 5px; "
                                  onclick="__$('obs').innerHTML = '';checkRadio('encounter<%= @encounter_data[e][0] %>', controlsSet1);
@@ -180,8 +244,8 @@
                               <span style="font-size: 0.7em; font-style: italic;">(<%= @encounter_data[e][2] %>)</span>
                             </div>
 
-                            <% if (current_user.user_id == @encounter_data[e][3]) %>
-                              <div onclick="confirmDeletion('Do you really want to delete this encounter?', '<%= @encounter_data[e][0]%>', 'encounter')" class="void" style="display: table-cell; float:right; padding: 11px; background: white; cursor: pointer;">
+                            <% if (current_user.user_id == @encounter_data[e][3]) || current_user.admin?%>
+                              <div class="image" onclick="confirmDeletion('Do you really want to delete this encounter?', '<%= @encounter_data[e][0]%>', 'encounter')" class="void" style="display: table-cell; float:right; padding: 11px; background: white; cursor: pointer;">
                                 <img height="30" src="/images/cancel_flat_small_red.png" alt="X"/>
                               </div>
                             <% end %>
@@ -194,7 +258,7 @@
 
                         <div id="<%= "bart2_encounter#{@bart2_encounter_data[e][0]}" %>" style="width: 100%; display: table; border-spacing: 0px;">
 
-                          <div id="<%= "parent_bart2_encounter#{@bart2_encounter_data[e][0]}" %>" style="display: table-row;">
+                          <div class="encounter <%= @bart2_encounter_data[e][4]%>" id="<%= "parent_bart2_encounter#{@bart2_encounter_data[e][0]}" %>" style="display: table-row;">
 
                             <div class="<%=  "e#{e}"%>" style="display: table-cell; vertical-align: middle; cursor: pointer;
                             <%= (e == 0 ? " border-top: 1px dotted #6281a7; " : "") %>
@@ -219,7 +283,7 @@
                               <span style="font-size: 0.7em; font-style: italic;">(<%= @bart2_encounter_data[e][2] %>)</span>
                             </div>
 
-                            <% if (current_user.user_id == @bart2_encounter_data[e][3]) %>
+                            <% if (current_user.user_id == @bart2_encounter_data[e][3]) || current_user.admin?%>
                               <div onclick="confirmDeletion('Do you really want to delete this encounter?', '<%=  @bart2_encounter_data[e][0]%>', 'bart2_encounter')" class="void" style="display: table-cell; float:right; padding: 10px; background: white; cursor: pointer;">
                                 <img height="30" src="/images/cancel_flat_small_red.png" alt="X"/>
                               </div>
@@ -251,26 +315,24 @@
 
       var controlsSet1 = <%= (controls rescue []).to_json %>;
 
-      var controlsSet2 = [];
+      var controlsSet2 = <%= (dates rescue []).to_json %>;;
 
       function __$(id){
         return document.getElementById(id);
       }
 
       function setDefaultView(){
-        var encounter_one = document.getElementsByClassName("e0")[0]
-
-        if (encounter_one != undefined){
-          encounter_one.onclick.apply(encounter_one);
+        var day_one = document.getElementsByClassName("date")[0];
+        if (day_one != undefined){
+          day_one.onclick.apply(day_one);
         }
-
-
       }
 
       function checkRadio(id, controls){
 
         for(var i = 0; i < controls.length; i++){
           if(__$(controls[i])){
+
             __$(controls[i]).getElementsByTagName("img")[0].src = "/touchscreentoolkit/lib/images/unchecked.png";
             __$("parent_" + controls[i].trim()).style.backgroundColor = "white";
           }
@@ -356,7 +418,6 @@
             cell2.innerHTML = (result[i][0] == "drg")? result[i][1].split(": ")[1].replace(/null/g, " -- ") : result[i][1].trim().split("|")[1];
 
             row.appendChild(cell2);
-
           }
         }
       }
@@ -370,7 +431,7 @@
         }else{
 
           if (__$("bart2_encounter" + id) != undefined){
-            __$("encounter").removeChild(__$("bart2_encounter" + id))
+            __$("encounter").removeChild(__$("bart2_encounter" + id));
           };
         }
         setTimeout((function (){
@@ -396,6 +457,29 @@
 
         return false;
 
+      }
+
+      function loadEncounters(date){
+         var encounters = document.getElementsByClassName("encounter");
+
+         for (var i in encounters){
+             try {
+                 encounters[i].style.display = "none";
+             }catch(e){}
+         }
+
+         var target_encounters = document.getElementsByClassName(date);
+
+         for (var i in target_encounters){
+             try {
+                 target_encounters[i].style.display = "block";
+             }catch(e){}
+         }
+
+          try {
+              var first_node = target_encounters[0].getElementsByTagName("img")[0];
+              first_node.click();
+          }catch(e){}
       }
 
       //-->

@@ -26,8 +26,13 @@ A. New installation on new database
 	
 	   Run application INITIAL USERNAME : admin
 		           INITIAL PASSWORD : test
+	5. Load metadata 
+	6. Run migrations 
+		bundle exec rake:db:migrate
+	7. Seed data
+		bundle exec rake db:seed
 
-
+	8. mysql -u user -ppassword db < db/anc2_schema_additions.sql
 B. Installation on existing database	
 	
 	1. Clone the application from github
@@ -51,7 +56,29 @@ B. Installation on existing database
 		mysql -u username -p database_name < db/drug_sets.sql
 
 	   If an error comes out showing a mysql table already exists, ignore it.
-	   
+	5. Load metadata
+
+	6. Run migrations
+		bundle exec rake db:migrate
+	7. Seed data
+	  	bundle exec rake db:seed
+	8. Load anc procedures and functions 
+		mysql -u user -ppassword db < db/anc2_schema_additions.sql
 	Run the application
 
-5
+To clean data anomalies
+
+script/runner script/auto_cleaner.rb
+
+C.  Correcting data inconsistencies
+		
+		1. Set correct drugs on drug sets 
+				a. FeFol (1 tablet) for 30 days
+				b. SP (3 tablets) for 1 day
+
+		2. Pull and update your application
+
+		3. Run the following
+				script/runner script/clean_anc_fansida_patients.rb
+
+		

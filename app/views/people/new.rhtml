@@ -526,6 +526,7 @@
     {	:id => 'address1',
     :helpText => 'Closest Landmark',
     :tt_requireNextClick => false,
+    :condition => '$("state_province").value != "Other" && $("filter_region").value != "Foreign"',
     :ajaxURL => '/people/landmark?filter_value=',
     :tt_pageStyleClass => "NoKeyboard",
     :tt_onLoad => "hideNext()"

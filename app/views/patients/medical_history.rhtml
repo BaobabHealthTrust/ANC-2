@@ -5,7 +5,7 @@
   <!--
   tt_cancel_show = "/patients/show/<%= @patient.id %>";
   tt_cancel_destination = "/patients/show/<%= @patient.id %>";
-  selectAll = false;
+  var selectAll = false;
   //-->
   function selectNone(){
     
@@ -30,7 +30,7 @@
       }
     }
 
-    setTimeout("selectNone()", 100);
+    setTimeout("selectNone()", 50);
   }
  
   function checkFields(){
@@ -54,7 +54,7 @@
     }
   }
 
-  setTimeout("selectNone()", 100);
+  setTimeout("selectNone()", 50);
 </script>
 
 <% form_tag :controller => "encounters", :action => "create" do %>

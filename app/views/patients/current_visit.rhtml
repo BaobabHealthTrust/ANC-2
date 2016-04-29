@@ -76,7 +76,7 @@
         <div style="display: table-cell">
           <% if current_user.activities.include?("Give Drugs") %>
             <button class="blue"
-                    onclick="window.location = '/prescriptions/give_drugs/?patient_id=<%= @patient.id %>'">
+                    onclick="window.location = '/prescriptions/give_drugs/?patient_id=<%= @patient.id %>&auto_flow=false'">
               <span>Give Drugs</span>
             </button>
           <% end %>
@@ -135,7 +135,7 @@
       </span>
     </button>
     <% if current_user.activities.include?("Lab Results") %>
-      <button onclick="window.location = '/patients/exam_label/?patient_id=<%= @patient.id %>'"
+      <button onclick="window.location = '/patients/exam_label/?patient_id=<%= @patient.id %>&force=true'"
               style="float: right; margin: 10px; margin-right: 0px;">
         <span>Print Lab Results</span>
       </button>

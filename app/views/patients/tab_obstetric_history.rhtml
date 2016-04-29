@@ -47,10 +47,11 @@
           &nbsp;<%= @gravida %>&nbsp;
         </td>
         <td style="padding-left: 50px;">
-          Multiple Pregnancy
+          Pre-Eclampsia
         </td>
-        <td style="border: 1px solid #000;" align="center">
-          &nbsp;<%= @multipreg %>&nbsp;
+        <td style="border: 1px solid #000;"
+            align="center" <%= (!@preeclampsia.nil? ? (@preeclampsia.upcase != "NO" ? "class='selected'" : "") : "") %>>
+          &nbsp;<%= (!@preeclampsia.nil? ? (@preeclampsia.upcase == "NO" ? "NO" : "YES") : "") %>&nbsp;
         </td>
       </tr>
       <tr>
@@ -107,13 +108,7 @@
             align="center" <%= (!@haemorrhage.nil? ? (@haemorrhage.upcase == "PPH" ? "class='selected'" : "") : "") %>>
           &nbsp;<%= @haemorrhage %>&nbsp;
         </td>
-        <td style="padding-left: 50px;">
-          Pre-Eclampsia
-        </td>
-        <td style="border: 1px solid #000;"
-            align="center" <%= (!@preeclampsia.nil? ? (@preeclampsia.upcase != "NO" ? "class='selected'" : "") : "") %>>
-          &nbsp;<%= (!@preeclampsia.nil? ? (@preeclampsia.upcase == "NO" ? "NO" : "YES") : "") %>&nbsp;
-        </td>
+
       </tr>
       <% if (!@preeclampsia.nil? ? (@preeclampsia.upcase == "NO" ? "NO" : "YES") : "NO") == "YES" %>
         <tr>

@@ -17,13 +17,33 @@ class EncountersController < ApplicationController
     #raise params[:encounter][:encounter_type_name].to_yaml
   
     encounter = Encounter.new(params[:encounter])
-    encounter.encounter_datetime = session[:datetime] unless session[:datetime].blank?
+    encounter.encounter_datetime = session[:datetime].to_date unless session[:datetime].blank?
     encounter.save
     
     # Observation handling
     (params[:observations] || []).each do |observation|
 
       next if observation[:concept_name].blank?
+
+      if  observation[:concept_name].upcase == "ARV NUMBER"
+        next if observation[:value_text].blank?
+        #cant be saved. ARV Number is saved as patient identifier
+        arvnumber = @patient.patient_identifiers.find_by_identifier_type(
+            PatientIdentifierType.find_by_name("ARV Number").id
+        )
+
+        if arvnumber.blank?
+          PatientIdentifier.create(
+              :identifier_type => PatientIdentifierType.find_by_name("ARV Number").id,
+              :identifier => observation[:value_text],
+              :patient_id => @patient.id
+          )
+        else
+          arvnumber.update_attributes(:identifier => observation[:value_text])
+        end
+
+        next
+      end
 
       if encounter.type.name == 'OBSTETRIC HISTORY' && observation[:concept_name] == "PARITY" && params[:parity].present?
         observation[:value_numeric] = params[:parity]
@@ -35,12 +55,12 @@ class EncountersController < ApplicationController
       }.compact
 
       next if values.length == 0
-      
+
       observation[:value_text] = observation[:value_text].join(", ") if observation[:value_text].present? && observation[:value_text].is_a?(Array)
       observation.delete(:value_text) unless observation[:value_coded_or_text].blank?
       
       observation[:encounter_id] = encounter.id
-      # observation[:obs_datetime] = encounter.encounter_datetime || Time.now()
+      observation[:obs_datetime] = encounter.encounter_datetime || Time.now()
       observation[:person_id] ||= encounter.patient_id
       observation[:concept_name] ||= "DIAGNOSIS" if encounter.type.name == "DIAGNOSIS"
       # Handle multiple select
@@ -132,23 +152,19 @@ class EncountersController < ApplicationController
         "REGISTRATION")
 
     if ((encounter.type.name.upcase rescue "") == "LAB RESULTS")
-
       available = false
       ((encounter.observations rescue []) || []).each do |ob|
-
         if !ob.answer_string.match(/not done/i) && ob.concept.name.name != "Workstation location"
           available = true
         end
       end
-
       if available.to_s == "true"
-
         print_and_redirect("/patients/exam_label?patient_id=#{@patient.id}",
                            next_task(@patient)) and return
       end
     end
 
-    redirect_to "/patients/print_history/?patient_id=#{@patient.id}" and return if (encounter.type.name.upcase rescue "") == 
+    redirect_to "/patients/print_history/?patient_id=#{@patient.id}" and return if (encounter.type.name.upcase rescue "") ==
       "SOCIAL HISTORY"
 
     @anc_patient = (ANCService::ANC.new(@patient) rescue nil) if @anc_patient.nil?
@@ -210,7 +226,38 @@ class EncountersController < ApplicationController
     @names = @preg_encounters.collect{|e|
       e.name.upcase
     }.uniq
-    
+
+    if params[:encounter_type] == "lab_results"
+			hiv_program_id = Bart2Connection::Program.find_by_name('HIV Program').id
+      hiv_positive = Bart2Connection::PatientProgram.find_by_sql("SELECT pg.patient_id FROM patient_program pg
+                    INNER JOIN patient_identifier pi ON pi.patient_id = pg.patient_id 
+										WHERE pi.identifier = '#{@patient.national_id}' AND pg.program_id = #{hiv_program_id}
+      ")
+
+		 	if !hiv_positive.blank?
+        @hiv_status = ['Positive', 'Positive']
+				
+				@art_start_date = Bart2Connection::PatientProgram.find_by_sql("
+										SELECT pg.patient_id, esd.date_enrolled FROM patient_program pg
+											INNER JOIN earliest_start_date esd ON esd.patient_id = pg.patient_id
+											INNER JOIN patient_identifier pi ON pi.patient_id = pg.patient_id
+										WHERE pi.identifier = '#{@patient.national_id}' AND pg.program_id = #{hiv_program_id}				
+      	").first.date_enrolled.to_date.to_s(:db) rescue nil
+
+        @on_art = ['Yes'] if @art_start_date.present?
+
+ 				@arv_number = Bart2Connection::PatientIdentifier.find_by_sql("
+										SELECT pi.identifier FROM patient_identifier pi
+											INNER JOIN earliest_start_date esd ON esd.patient_id = pi.patient_id
+										WHERE pi.identifier_type = (SELECT patient_identifier_type_id FROM patient_identifier_type
+																								WHERE name = 'ARV Number') 
+											AND pi.patient_id = (SELECT patient_id FROM patient_identifier 
+																							WHERE identifier = '#{@patient.national_id}')				
+      	")[0]['identifier'] rescue nil
+
+      end
+    end
+
     if next_task(@patient) == "/patients/current_pregnancy/?patient_id=#{@patient.id}" && @names.include?("CURRENT PREGNANCY")
       redirect_to "/patients/hiv_status/?patient_id=#{@patient.id}" and return
     end

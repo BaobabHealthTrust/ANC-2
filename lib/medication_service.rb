@@ -59,10 +59,11 @@ module MedicationService
     orders
   end
   
-  def self.current_treatment_encounter(patient)
+  def self.current_treatment_encounter(patient, date=Date.today)
     type = EncounterType.find_by_name("TREATMENT")
-    encounter = patient.encounters.current.find_by_encounter_type(type.id)
-    encounter ||= patient.encounters.create(:encounter_type => type.id)
+    encounter = patient.encounters.find(:last, :conditions => ["encounter_type = ? AND DATE(encounter_datetime) = ?",
+    type.id, date.to_date])
+    encounter ||= patient.encounters.create(:encounter_type => type.id, :encounter_datetime => date)
   end
 
   def self.generic

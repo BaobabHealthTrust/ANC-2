@@ -1,0 +1,55 @@
+<%= stylesheet_link_tag 'extra_buttons' %>
+<style type="text/css">
+    body {
+        -moz-user-select:none;
+        font-family: Arial,sans-serif;
+    }
+
+    #stats {
+        width:98%;
+        margin:10px;
+        background:white;
+        -moz-user-select:none;
+    }
+
+    #stats a {
+        border-radius: 7px;
+        background-color: #669999;
+        border-bottom: 1px outset black;
+        border-style: outset;
+        border-top: 1px outset black;
+        color: white;
+        display: block;
+        padding: 10px 16px 10px 10px;
+        text-align: center;
+        text-decoration: none;
+    }
+
+    #stats td {
+        width: 310px;
+    }
+
+    #table_div {
+        overflow:auto;
+        height: 280px;
+        background-color: white;
+        border: 1px #eee solid;
+        border-width: 1px;
+    }
+</style>
+
+
+<base target="_parent">
+<h2 style="margin: 0px;-moz-user-select:none;"></h2>
+<div id="table_div">
+
+  <table id="stats">
+
+            <tr>
+              <td><a href="/patients/national_id_label?patient_id=<%= @patient.id%>">National ID (Print)</a></td>
+              <td><a href="/patients/current_visit_label?patient_id=<%= @patient.id%>">Visit Summary</a></td>
+              <td><a href="/patients/obstetric_medical_examination_label?patient_id=<%= @patient.id%>">Patient History</a></td>
+            </tr>
+  </table>
+</div>
+</base>

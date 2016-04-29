@@ -2,16 +2,29 @@
   td #Unknown {
     display: none;
   }
+	#summary{
+		font-size: 1.8em;
+		padding: 25px;		
+	}
+  #summary .value{
+		color: red;
+		font-style: italic;
+	}
 </style>
 <script type="text/javascript" language="javascript">
   <!--
   tt_cancel_show = "/patients/show/<%= @patient.id %>";
   tt_cancel_destination = "/patients/show/<%= @patient.id %>";
   var timedEvent;
-
   var parsedConceptName;
 
   //-->
+	<%
+     status = @hiv_status rescue nil
+     art_status = @on_art rescue nil
+     arv_number = @arv_number rescue nil
+		 start_date = @art_start_date rescue nil
+  %>
 
   function readableMessage(){
 
@@ -61,7 +74,7 @@
     if (__$('new_test_result_at_current_facility').value == 'Positive'){
       return false;
     }
-    
+
     var hiv_test_date_str = __$("touchscreenInput" + tstCurrentPage).value.replace(/-/g, '/');
 
     var hiv_test_date     = new Date(hiv_test_date_str);
@@ -73,7 +86,7 @@
       showMessage("Patient needs to be tested again");
       return true;
     }
-          
+
     return false;
   }
 
@@ -84,7 +97,7 @@
       press("Not Done");
     }
   }
-  
+
   function getSelected(){
     var choices = "";
 
@@ -95,7 +108,7 @@
         }
       }
     }
-    
+
     return choices;
   }
 
@@ -135,7 +148,45 @@
       }
     }
   }
-  
+function alertStatus() {
+   <% if (status.present? rescue false) %>
+        gotoNextPage();
+   <% end %>
+}
+
+function alertARTStatus(){
+    <% if (art_status.present? rescue false) %>
+    gotoNextPage();
+    <% end %>
+}
+
+function alertARVNumber(){
+    <% if (arv_number.present? rescue false) %>
+     gotoNextPage();
+    <% end %>
+}
+
+function remoteARTStatus(){
+ 		displayText = "<div>"
+		<% if status.present? %>
+    	displayText += "HIV Status : &nbsp;&nbsp;&nbsp;&nbsp;<span class='value'><%= status.first %> </span><br />";
+		<% end %>
+
+		<% if art_status.present? %>
+    	displayText += "On ART : &nbsp;&nbsp;&nbsp;&nbsp;<span class='value'><%= art_status %> </span><br />";
+		<% end %>
+
+		<% if start_date.present? %>
+    	displayText += "ART Start Date : &nbsp;&nbsp;&nbsp;&nbsp;<span class='value'><%= start_date %></span> <br />";
+		<% end %>
+
+		<% if arv_number.present? %>
+    	displayText += "ARV Number : &nbsp;&nbsp;&nbsp;&nbsp;<span class='value'><%= arv_number %> </span> <br />";
+		<% end %>
+
+    document.getElementById('inputFrame'+tstCurrentPage).innerHTML = '<div id="summary">' + displayText + '</div>';   
+  }
+        
   //-->
 </script>
 
@@ -144,17 +195,28 @@
   <%= hidden_field_tag "encounter[patient_id]", @patient.id %>
   <%= hidden_field_tag "encounter[encounter_datetime]", DateTime.now() %>
   <%= hidden_field_tag "encounter[provider_id]", session[:user_id] %>
-  <%session_date = session[:datetime] || DateTime.now() %>
+  <%session_date = session[:datetime] || DateTime.now() %>  
+
+	 <%= text_field_tag :showSummary, nil,
+    {
+    :tt_onLoad => "remoteARTStatus(); __$('keyboard').style.display = 'none'",
+    :optional => "true",
+    :tt_pageStyleClass => "NoControls NoKeyboard",
+    :condition => "#{status.present? || art_status.present? || arv_number.present?}",
+    :helpText => "<span class='helper'> ART Summary </span>"
+  } %>
 
   <% if params[:update].blank? %>
 
     <%= touch_select_tag "HIV status", @patient,
-      options_for_select([["", ""], ["Negative", "Negative"], ["Positive", "Positive"], ["Not Done", "Not Done"]]),
+      options_for_select([["", ""], ["Negative", "Negative"], ["Positive", "Positive"],
+                          ["Inconclusive", "Inconclusive"], ["Unknown", "Unknown"], ["Not Done", "Not Done"]],
+                         status),
       {:id => "new_test_result_at_current_facility",
       :helptext => "HIV Test Result <span class='helper'> Lab Results</span>",
       :tt_BeforeUnload => "checkHIVTestUnknown()",
       :tt_onUnLoad => "parsedConceptName = '';",
-      :tt_onLoad => "parsedConceptName = 'HIV Status'; unknownToNotDone(); ",
+      :tt_onLoad => "parsedConceptName = 'HIV Status'; alertStatus(); unknownToNotDone(); ",
       :condition => "#{["unknown", "old_negative"].include?(@patient.resent_hiv_status?(session_date))}" } %>
 
     <%= touch_date_tag "HIV test date", @patient, nil,
@@ -168,26 +230,45 @@
       :max => "#{session[:datetime].to_date rescue Date.today}"
     } %>
 
-    <%= select_tag("choice", options_for_select(["", "HB Test Result",
-          "Syphilis Test Result", "Urine Protein", "Malaria Test Result"]),
+    <%= touch_select_tag "On ART", @patient,
+                         options_for_select([["", ""], ["Yes", "Yes"], ["No", "No"]], art_status),
+       {:id => "on_art",
+        :helptext => "Is Patient On ART? <span class='helper'> Lab Results</span>",
+        :tt_onUnLoad => "parsedConceptName = '';",
+        :tt_onLoad => " parsedConceptName = 'On ART'; alertARTStatus()",
+        :condition => "__$('new_test_result_at_current_facility').value == 'Positive'"
+       } %>
+
+    <%= touch_text_field_tag "ARV Number", @patient, arv_number,
+       {:id => "arv_number",
+        :optional => true,
+				:tt_onLoad => 'alertARVNumber()',
+        :helptext => "ARV Number <span class='helper'> Lab Results</span>",
+        :tt_onUnLoad => "parsedConceptName = '';",
+        :condition => "__$('on_art').value == 'Yes'"
+       } %>
+
+    <%= select_tag("choice", options_for_select([["", ""], ["", ""], ["HB Test Result", "HB Test Result"],
+          ["Syphilis Test Result", "Syphilis Test Result"], 
+					["Urine Protein", "Urine Protein"], 
+					["Malaria Test Result", "Malaria Test Result"]], ["", ""]),
       {
         :helpText => "Select Available Test Results <span class='helper'> Lab Results</span>", :id => "choice", :multiple => true,
-        :tt_onLoad => "transformMessages()",
         :optional => :true
       })%>
   <% else %>
 
-    <%= select_tag("choice", options_for_select(["", "HIV Test Result", "HB Test Result",
-          "Syphilis Test Result", "Urine Protein", "Malaria Test Result"]),
+    <%= select_tag("choice", options_for_select([["", ""], ["", ""], ["HIV Test Result", "HIV Test Result"], 
+					["HB Test Result", "HB Test Result"],["Syphilis Test Result", "Syphilis Test Result"],
+           ["Urine Protein", "Urine Protein"], ["Malaria Test Result", "Malaria Test Result"]], ["", ""]),
       {
         :helpText => "Select Available Test Results <span class='helper'> Lab Results</span>", :id => "choice", :multiple => true,
-        :tt_onLoad => "transformMessages()",
         :optional => :true
       })%>
   <%end%>
 
   <%= touch_select_tag "HIV status", @patient,
-    options_for_select([["", ""], ["Negative", "Negative"], ["Positive", "Positive"], ["Not Done", "Not Done"]]),
+    options_for_select([["", ""], ["Negative", "Negative"], ["Positive", "Positive"],["Inconclusive", "Inconclusive"],["Not Done", "Not Done"]]),
     {:id => "new_test_result_at_current_facility",
     :helptext => "HIV Test Result <span class='helper'> Lab Results</span>",
     :tt_BeforeUnload => "checkHIVTestUnknown()",

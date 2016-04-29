@@ -353,14 +353,6 @@
   }
 %>
 
-  <%= touch_select_tag "Multiple gestation", @patient, options_for_select([["", ""],
-      ["No", "No"], ["Twins", "Twins"],
-      ["Triplets", "Triplets"],
-      ["Quadruplet", "Quadruplet"],
-      ["Unknown", "Unknown"]]),
-    {:id => "multiple_gestation",
-    :helptext => "Is This a Multiple Pregnancy?  <span class='helper'> Current Pregnancy</span>" } %>
-
   <%#= touch_select_tag "Week of First Visit", @patient,
   options_for_select(["", "0-12", "13-24", "25-28", "28+"]),
   {:id => "week_of_first_visit",

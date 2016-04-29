@@ -144,9 +144,9 @@ class PeopleController < GenericPeopleController
 				# TODO - figure out how to write a test for this
 				# This is sloppy - creating something as the result of a GET
 				if create_from_remote        
-					found_person_data = ANCService.search_by_identifier(params[:identifier]).first rescue nil
+					found_person_ = ANCService.search_by_identifier(params[:identifier]).first rescue nil
 
-					found_person = ANCService.create_from_form(found_person_data['person']) unless found_person_data.nil?
+					#found_person = ANCService.create_from_form(found_person_data['person']) unless found_person_data.nil?
 				end 
 			end
 
@@ -328,21 +328,36 @@ class PeopleController < GenericPeopleController
       nationalities << nat if nat.upcase.strip.match(search_string)
     }
 
+    if nationalities.length > 0
+      nationalities = (["Mozambican", "Zambian", "Tanzanian", "Zimbambean", "Nigerian", "Burundian", "Namibian"] + nationalities).uniq
+    end
+
     render :text => "<li></li><li " + nationalities.map{|nationality| "value=\"#{nationality}\">#{nationality}" }.join("</li><li ") + "</li>"
 
   end
 
-  def static_countries
-    search_string = (params[:search_string] || "").upcase
+  def verify_patient_npids
 
-    nationalities = []
+    if request.get?
+      render :template => "/people/data_cleaning_date_range" and return
+    else
+      local_patients = []
+      Patient.find_by_sql(["SELECT * FROM patient
+                                    WHERE patient_id IN (
+                                      SELECT DISTINCT(patient_id) FROM encounter WHERE DATE(encounter_datetime) BETWEEN ? AND ?
+                                    )",
+                                    params[:start_date].to_date, params[:end_date].to_date]).each do |p|
+          local_patients << [p, p.person.name]
+      end
+      @local_patients = local_patients.sort_by{|patient, name| [name]}
+    end
+  end
 
-    File.open(RAILS_ROOT + "/public/data/countries.txt", "r").each{ ||
-      nationalities << c if c.upcase.strip.match(search_string)
-    }
-
-    render :text => "<li></li><li " + nationalities.map{|ctry| "value=\"#{ctry}\">#{ctry}" }.join("</li><li ") + "</li>"
-
+  def remote_people
+    @patients = Bart2Connection::Patient.find_by_sql("SELECT * FROM patient WHERE patient_id IN (
+                  SELECT patient_id FROM patient_identifier WHERE identifier = '#{params[:npid]}'
+              )");
+    render :layout => false
   end
 
 
