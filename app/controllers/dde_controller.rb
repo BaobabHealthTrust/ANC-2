@@ -70,6 +70,8 @@ class DdeController < ApplicationController
   def process_data
     @settings = YAML.load_file("#{Rails.root}/config/dde_connection.yml")[Rails.env] rescue {}
 
+    protocal = @settings["secure_connection"].to_s == 'true' ? 'https' : 'http'
+
     patient = PatientIdentifier.find_by_identifier(params[:id]).patient rescue nil
 
     national_id = ((patient.patient_identifiers.find_by_identifier_type(PatientIdentifierType.find_by_name("National id").id).identifier rescue nil) || params[:id])
@@ -301,7 +303,10 @@ class DdeController < ApplicationController
       }
     }
 
-    result = RestClient.post("http://#{@settings["dde_username"]}:#{@settings["dde_password"]}@#{@settings["dde_server"]}/process_confirmation", {:person => person, :target => "update"})
+    protocal = @settings["secure_connection"].to_s == 'true' ? 'https' : 'http'
+
+
+    result = RestClient.post("#{protocal}://#{@settings["dde_username"]}:#{@settings["dde_password"]}@#{@settings["dde_server"]}/process_confirmation", {:person => person, :target => "update"})
 
     json = JSON.parse(result) rescue {}
 
@@ -344,11 +349,15 @@ class DdeController < ApplicationController
 
     if !@json.blank?
 
-      @results = RestClient.post("http://#{@settings["dde_username"]}:#{@settings["dde_password"]}@#{@settings["dde_server"]}/ajax_process_data", {:person => @json, :page => params[:page]}, {:accept => :json})
+      protocal = @settings["secure_connection"].to_s == 'true' ? 'https' : 'http'
+
+      @results = RestClient.post("#{protocal}://#{@settings["dde_username"]}:#{@settings["dde_password"]}@#{@settings["dde_server"]}/ajax_process_data", {:person => @json, :page => params[:page]}, {:accept => :json})
 
     end
 
     @dontstop = false
+
+    protocal = @settings["secure_connection"].to_s == 'true' ? 'https' : 'http'
 
     if JSON.parse(@results).length == 1
 
@@ -364,7 +373,7 @@ class DdeController < ApplicationController
 
         person = JSON.parse(@results)#["person"]
 
-        @results = RestClient.post("http://#{@settings["dde_username"]}:#{@settings["dde_password"]}@#{@settings["dde_server"]}/process_confirmation", {:person => person, :target => "select"})
+        @results = RestClient.post("#{protocal}://#{@settings["dde_username"]}:#{@settings["dde_password"]}@#{@settings["dde_server"]}/process_confirmation", {:person => person, :target => "select"})
 
         @dontstop = true
 
@@ -376,7 +385,7 @@ class DdeController < ApplicationController
 
         person = JSON.parse(@results)#["person"]
 
-        @results = RestClient.post("http://#{@settings["dde_username"]}:#{@settings["dde_password"]}@#{@settings["dde_server"]}/process_confirmation", {:person => person, :target => "select"})
+        @results = RestClient.post("#{protocal}://#{@settings["dde_username"]}:#{@settings["dde_password"]}@#{@settings["dde_server"]}/process_confirmation", {:person => person, :target => "select"})
 
         @dontstop = true
 
@@ -440,7 +449,7 @@ class DdeController < ApplicationController
 
             person = JSON.parse(@results)#["person"]
 
-            @results = RestClient.post("http://#{@settings["dde_username"]}:#{@settings["dde_password"]}@#{@settings["dde_server"]}/process_confirmation", {:person => person, :target => "select"})
+            @results = RestClient.post("#{protocal}://#{@settings["dde_username"]}:#{@settings["dde_password"]}@#{@settings["dde_server"]}/process_confirmation", {:person => person, :target => "select"})
 
             @dontstop = true
 
@@ -521,9 +530,12 @@ class DdeController < ApplicationController
 
     result = []
 
+    protocal = settings["secure_connection"].to_s == 'true' ? 'https' : 'http'
+
+
     if !person.blank?
 
-      results = RestClient.post("http://#{settings["dde_username"]}:#{settings["dde_password"]}@#{settings["dde_server"]}/ajax_process_data", {:person => person, :page => params[:page]}, {:accept => :json})
+      results = RestClient.post("#{protocal}://#{settings["dde_username"]}:#{settings["dde_password"]}@#{settings["dde_server"]}/ajax_process_data", {:person => person, :page => params[:page]}, {:accept => :json})
 
       result = JSON.parse(results)
 
@@ -593,8 +605,10 @@ class DdeController < ApplicationController
 
     target = "update" if target.blank?
 
+    protocal = settings["secure_connection"].to_s == 'true' ? 'https' : 'http'
+
     if !@json.blank?
-      @results = RestClient.post("http://#{settings["dde_username"]}:#{settings["dde_password"]}@#{settings["dde_server"]}/process_confirmation", {:person => @json, :target => target}, {:accept => :json})
+      @results = RestClient.post("#{protocal}://#{settings["dde_username"]}:#{settings["dde_password"]}@#{settings["dde_server"]}/process_confirmation", {:person => @json, :target => target}, {:accept => :json})
     end
 
     render :text => @results
@@ -634,7 +648,9 @@ class DdeController < ApplicationController
 
       pagesize += pagesize - result.length
 
-      remote = RestClient.post("http://#{settings["dde_username"]}:#{settings["dde_password"]}@#{settings["dde_server"]}/ajax_process_data", {:person => search_hash, :page => page, :pagesize => pagesize}, {:accept => :json})
+      protocal = @settings["secure_connection"].to_s == 'true' ? 'https' : 'http'
+
+      remote = RestClient.post("#{protocal}://#{settings["dde_username"]}:#{settings["dde_password"]}@#{settings["dde_server"]}/ajax_process_data", {:person => search_hash, :page => page, :pagesize => pagesize}, {:accept => :json})
 
       json = JSON.parse(remote)
 
@@ -730,7 +746,9 @@ class DdeController < ApplicationController
 
     @settings = YAML.load_file("#{Rails.root}/config/dde_connection.yml")[Rails.env] # rescue {}
 
-    @results = RestClient.post("http://#{(@settings["dde_username"])}:#{(@settings["dde_password"])}@#{(@settings["dde_server"])}/ajax_process_data", {"person" => params["person"]})
+    protocal = @settings["secure_connection"].to_s == 'true' ? 'https' : 'http'
+
+    @results = RestClient.post("#{protocal}://#{(@settings["dde_username"])}:#{(@settings["dde_password"])}@#{(@settings["dde_server"])}/ajax_process_data", {"person" => params["person"]})
 
     render :layout => "ts"
 
@@ -906,7 +924,9 @@ class DdeController < ApplicationController
 
     @settings = YAML.load_file("#{Rails.root}/config/dde_connection.yml")[Rails.env] # rescue {}
 
-    result = RestClient.post("http://#{(@settings["dde_username"])}:#{(@settings["dde_password"])}@#{(@settings["dde_server"])}/merge_duplicates", {"data" => data.to_json}, {:content_type => :json}) # rescue nil
+    protocal = @settings["secure_connection"].to_s == 'true' ? 'https' : 'http'
+
+    result = RestClient.post("#{protocal}://#{(@settings["dde_username"])}:#{(@settings["dde_password"])}@#{(@settings["dde_server"])}/merge_duplicates", {"data" => data.to_json}, {:content_type => :json}) # rescue nil
 
     # raise result.inspect  
 

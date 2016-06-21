@@ -170,7 +170,9 @@ class Bart2Connection::PatientIdentifier < ActiveRecord::Base
     elsif create_from_dde2_server
 
       @settings = YAML.load_file("#{Rails.root}/config/dde_connection.yml")[Rails.env] # rescue {}
-      uri = "http://#{(@settings["dde_username"])}:#{(@settings["dde_password"])}@#{(@settings["dde_server"])}/ajax_process_data"
+      protocal = @settings["secure_connection"].to_s == 'true' ? 'https' : 'http'
+
+      uri = "#{protocal}://#{(@settings["dde_username"])}:#{(@settings["dde_password"])}@#{(@settings["dde_server"])}/ajax_process_data"
       post_data = {
           "person" => {
              "national_id" => identifier
