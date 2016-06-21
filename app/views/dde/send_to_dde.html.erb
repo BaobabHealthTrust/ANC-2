@@ -29,7 +29,7 @@
               Last Name:
             </div>
             <div class="cell  input_cell">
-              &nbsp;<%= @json["names"]["family_name"] rescue nil %>
+              &nbsp;<%= @json["names"]["family_name"] rescue nil %>f
             </div>
           </div>
           
@@ -249,7 +249,7 @@
 
 <div class="navbar  navbar-inverse navbar-fixed-bottom" style="position:absolute; bottom: 0px; width: 100%; min-height: 105px; 
     color: #ccc; text-align: center; padding-top: 5px; background-color: #333; margin: 0px; margin-left: -5px;">
-      <button class='button_red' id='btncancel' style='float: left; margin-left: 20px;' onclick="back()">
+      <button class='button_red' id='btncancel' style='float: left; margin-left: 20px;' onclick="window.location = '/clinic'">
           Cancel
       </button>
       
