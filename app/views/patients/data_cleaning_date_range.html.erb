@@ -1,0 +1,25 @@
+<script>
+    tt_cancel_destination = "/?active_tab=tab2";
+</script>
+
+<style>
+    #Unknown {
+        display: none;
+    }
+</style>
+<form action="/patients/incomplete_visits" method='post'>
+
+  <%= text_field_tag("start_date", nil, {:field_type => 'date', :helpText => 'Start date'}) %> <br>
+  <%= text_field_tag("end_date", nil, {:field_type => 'date', :helpText => 'End date'})%><br>
+  <%= select_tag 'incomplete_first_visit[]',
+	    options_for_select(@encounter_types, ''),
+	    :helpText => "First Visit Missing Encounter" ,
+	    :tt_onLoad =>"createMultipleSelectControl()",
+	    :multiple =>  true %><br/>
+  <%= select_tag 'incomplete_next_visit[]',
+	    options_for_select(@encounter_types, ''),
+	    :helpText => "Next Visit Missing Encounter" ,
+	    :tt_onLoad =>"createMultipleSelectControl()",
+	    :multiple =>  true %><br/>
+  <%= submit_tag value="Submit"%>
+</form>

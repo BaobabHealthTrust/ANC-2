@@ -18,12 +18,13 @@ class Reports
     @enddate = @end_date
     @startdate = @start_date
 
-    @preg_range = (@type == "cohort") ? 6.months : ((end_date.to_time - start_date.to_time).round/(3600*24)).days
+    @preg_range = (@type == "cohort") ? 6.months : (((end_date.to_time - start_date.to_time).round/(3600*24)) + 1).days
 
+    e_date = ((@startdate.to_date + @preg_range) - 1.day).to_date
+    min_date = @startdate.to_date - 10.months
+    @cohortpatients = []
     if @type == "cohort"
-
       @cohortpatients = registrations(@startdate.to_date.beginning_of_month, @enddate.to_date.end_of_month)
-
     else
 
       @cohortpatients = Encounter.find(:all, :joins => [:observations], :group => [:patient_id],
@@ -33,31 +34,32 @@ class Reports
                                                        EncounterType.find_by_name("ANC VISIT TYPE").id,
                                                        ConceptName.find_by_name("TYPE OF VISIT").concept_id,
                                                        @startdate, @enddate]).collect { |e| e.patient_id }.uniq
-
     end
-
-    e_date = (@startdate.to_date + @preg_range).to_date
-    min_date = @startdate.to_date - 10.months
 
     lmp_concept = ConceptName.find_by_name("DATE OF LAST MENSTRUAL PERIOD").concept_id
 
-    @lmp = "(SELECT DATE(MAX(obs.value_datetime)) FROM obs WHERE obs.person_id = encounter.patient_id
-            AND obs.concept_id = #{lmp_concept} AND DATE(obs.obs_datetime) <= '#{e_date.to_s}'
-            AND DATE(obs.obs_datetime) >= '#{min_date.to_s}')"
-
-    @anc_visits = Encounter.find_by_sql(["SELECT #{@lmp} lmp, encounter.patient_id patient_id, MAX(ob.value_numeric) form_id FROM encounter
-                                        INNER JOIN obs ob ON ob.encounter_id = encounter.encounter_id
-                                        WHERE encounter.patient_id IN (?) AND encounter.encounter_type = ?
-                                        AND ob.concept_id = ? AND DATE(encounter.encounter_datetime) <= ?
-                                        AND DATE(encounter.encounter_datetime) >= #{@lmp}
-                                        GROUP BY encounter.patient_id",
-                                       @cohortpatients,
-                                       EncounterType.find_by_name("ANC VISIT TYPE").id,
-                                       ConceptName.find_by_name("Reason for visit").concept_id,
-                                       e_date
-                                      ]).collect { |e| [e.patient_id, e.form_id] }
-
     @lmp = "(SELECT (max_patient_lmp(encounter.patient_id, '#{e_date.to_s}', '#{min_date.to_s}')))"
+
+    lmp_concept = ConceptName.find_by_name("DATE OF LAST MENSTRUAL PERIOD").concept_id
+
+    lmp = "(SELECT DATE(MAX(o.value_datetime)) FROM obs o WHERE o.person_id = enc.patient_id
+            AND o.concept_id = #{lmp_concept} AND DATE(o.obs_datetime) <= '#{e_date.to_s}'
+            AND DATE(o.obs_datetime) >= '#{min_date.to_s}')"
+
+    @anc_visits = Encounter.find_by_sql(["SELECT #{lmp} lmp, enc.patient_id patient_id, MAX(ob.value_numeric) form_id FROM encounter enc
+                                        INNER JOIN obs ob ON ob.encounter_id = enc.encounter_id
+                                        WHERE enc.patient_id IN (?) AND enc.encounter_type = ?
+                                        AND ob.concept_id = ? AND DATE(enc.encounter_datetime) <= ?
+                                        AND DATE(enc.encounter_datetime) >= #{lmp}
+                                        GROUP BY enc.patient_id",
+                                         @cohortpatients,
+                                         EncounterType.find_by_name("ANC VISIT TYPE").id,
+                                         ConceptName.find_by_name("Reason for visit").concept_id,
+                                         e_date
+                                        ]).collect { |e| [e.patient_id, e.form_id] }
+
+
+    @cohortpatients = observations_total
 
     @positive_patients = (hiv_test_result_pos.uniq + hiv_test_result_prev_pos.uniq).delete_if { |p| p.blank? }
     @first_visit_positive_patients = (first_visit_hiv_test_result_prev_positive.uniq + first_visit_new_positive.uniq).delete_if { |p| p.blank? }
@@ -102,10 +104,9 @@ class Reports
   end
 
   def registrations(start_dt, end_dt)
-
-    Encounter.find(:all, :joins => [:observations], :group => [:patient_id],
+    Encounter.find(:all, :joins => [" INNER JOIN obs ON obs.person_id = encounter.patient_id "], :group => [:patient_id],
                    :select => ["MAX(value_datetime) lmp, patient_id"],
-                   :conditions => ["encounter_type = ? AND concept_id = ? AND DATE(encounter_datetime) >= ? " +
+                   :conditions => ["encounter_type = ? AND obs.concept_id = ? AND DATE(encounter_datetime) >= ? " +
                                        "AND DATE(encounter_datetime) <= ? AND encounter.voided = 0",
                                    EncounterType.find_by_name("Current Pregnancy").id,
                                    ConceptName.find_by_name("Date of Last Menstrual Period").concept_id,
@@ -162,24 +163,26 @@ class Reports
 
   def week_of_first_visit_1
 
-    @cases = Encounter.find(:all, :joins => [:observations],
-                            :conditions => ["concept_id = ? AND value_numeric < 13 AND DATE(encounter_datetime) BETWEEN (#{@lmp}) AND (?)" +
-                                                " AND patient_id IN (?)",
+    @cases = Encounter.find_by_sql(["SELECT patient_id, MAX(o.value_numeric) wk FROM encounter INNER JOIN obs o ON o.encounter_id = encounter.encounter_id
+                              AND o.concept_id = ? AND encounter.voided = 0
+                              WHERE DATE(encounter_datetime) BETWEEN (#{@lmp}) AND (?) AND patient_id IN (?)
+                              GROUP BY patient_id HAVING wk < 13",
                                             ConceptName.find_by_name("WEEK OF FIRST VISIT").concept_id,
-                                             (@startdate.to_date + @preg_range), @cohortpatients]).collect { |e| e.patient_id }.uniq
+                                            ((@startdate.to_date + @preg_range)-1.day), @cohortpatients]
+                            ).collect { |e| e.patient_id }.uniq
 
     @cases
   end
 
-
   def week_of_first_visit_2
 
-    @cases = Encounter.find(:all, :joins => [:observations],
-                            :conditions => ["concept_id = ? AND value_numeric >= 13 AND DATE(encounter_datetime) BETWEEN (#{@lmp}) AND (?)" +
-                                                " AND patient_id IN (?)",
-                                            ConceptName.find_by_name("WEEK OF FIRST VISIT").concept_id,
-                                             (@startdate.to_date + @preg_range), @cohortpatients]).collect { |e| e.patient_id }.uniq
-
+    @cases = Encounter.find_by_sql(["SELECT patient_id, MAX(o.value_numeric) wk FROM encounter INNER JOIN obs o ON o.encounter_id = encounter.encounter_id
+                              AND o.concept_id = ? AND encounter.voided = 0
+                              WHERE DATE(encounter_datetime) BETWEEN (#{@lmp}) AND (?) AND patient_id IN (?)
+                              GROUP BY patient_id HAVING wk >= 13",
+                             ConceptName.find_by_name("WEEK OF FIRST VISIT").concept_id,
+                             ((@startdate.to_date + @preg_range)-1.day), @cohortpatients]
+    ).collect { |e| e.patient_id }.uniq
     @cases
   end
 
@@ -219,7 +222,14 @@ class Reports
 
   def ttv__total_previous_doses_1
 
-    @cases = Patient.find_by_sql(["SELECT * FROM patient WHERE patient_id IN (SELECT person_id FROM obs LEFT OUTER JOIN encounter ON encounter.encounter_id = obs.encounter_id WHERE concept_id = (SELECT concept_id FROM concept_name WHERE name = 'TTV: TOTAL PREVIOUS DOSES') AND (value_coded IN (SELECT concept_id FROM concept_name WHERE name = '=0 OR =1') OR value_numeric = '=0 OR =1' OR value_boolean = '=0 OR =1' OR value_datetime = '=0 OR =1' OR value_text = '=0 OR =1') AND encounter_datetime >= ? AND encounter_datetime <= ?)", @startdate, (@startdate.to_date + @preg_range)]).collect { |p| p.patient_id }.uniq
+    @cases = Patient.find_by_sql(["SELECT * FROM patient
+              WHERE patient_id IN
+                (SELECT person_id FROM obs LEFT OUTER JOIN encounter ON encounter.encounter_id = obs.encounter_id
+                      WHERE concept_id = (SELECT concept_id FROM concept_name WHERE name = 'TTV: TOTAL PREVIOUS DOSES')
+                      AND (value_coded IN (SELECT concept_id FROM concept_name WHERE name = '=0 OR =1')
+                            OR value_numeric = '=0 OR =1' OR value_boolean = '=0 OR =1' OR value_datetime = '=0 OR =1' OR value_text = '=0 OR =1')
+                      AND encounter_datetime >= ? AND encounter_datetime <= ?)",
+                                  @startdate, ((@startdate.to_date + @preg_range) - 1.day)]).collect { |p| p.patient_id }.uniq
 
   end
 
@@ -235,14 +245,14 @@ class Reports
                    :conditions => ["concept_id = ? AND (value_numeric > 0 OR value_text > 0) AND DATE(encounter_datetime) BETWEEN (?) AND (?)" +
                                        "AND encounter.patient_id IN (?)",
                                    ConceptName.find_by_name("TT STATUS").concept_id,
-                                   @lmp, (@startdate.to_date + @preg_range), @cohortpatients]).each { |e|
+                                   @lmp, ((@startdate.to_date + @preg_range) - 1.day), @cohortpatients]).each { |e|
       patients[e.patient_id] = e.form_id };
 
     Order.find(:all, :joins => [[:drug_order => :drug], :encounter],
                :select => ["encounter.patient_id, count(*) encounter_id"],
                :group => [:patient_id], :conditions => ["drug.name LIKE ? AND (DATE(encounter_datetime) >= ? " +
                                                             "AND DATE(encounter_datetime) <= ?) AND encounter.patient_id IN (?) AND orders.voided = 0", "%TTV%",
-                                                        @lmp, (@startdate.to_date + @preg_range), @cohortpatients]).collect { |o|
+                                                        @lmp, ((@startdate.to_date + @preg_range) - 1.day), @cohortpatients]).collect { |o|
       [o.patient_id, o.encounter_id] }.delete_if { |p, e|
       v = 0;
       v = patients[p] if patients[p]
@@ -254,12 +264,11 @@ class Reports
 
   def fansida__sp___number_of_tablets_given_0
 
-    select = Order.find(:all, :joins => [[:drug_order => :drug], :encounter],
-          :select => ["encounter.patient_id, count(distinct(DATE(encounter_datetime))) encounter_id, drug.name instructions"],
-          :group => [:patient_id], :conditions => ["drug.name = ? " +
-               "AND DATE(encounter_datetime) <= ? AND encounter.patient_id IN (?)", "SP (3 tablets)",
-                (@startdate.to_date + @preg_range), @cohortpatients]).collect { |o| o.patient_id }
-               #raise @cohortpatients.length.to_yaml
+    select =Order.find(:all, :joins => [[:drug_order => :drug], :encounter],
+                       :select => ["encounter.patient_id"],
+                       :conditions => ["drug.name = ?  AND (DATE(encounter_datetime) >= #{@lmp}" +
+                                           "AND DATE(encounter_datetime) <= ?) AND encounter.patient_id IN (?)", "SP (3 tablets)",
+                                       ((@startdate.to_date + @preg_range) - 1.day), @cohortpatients]).map(&:patient_id).uniq
     @cohortpatients - select
   end
 
@@ -269,9 +278,9 @@ class Reports
           :select => ["encounter.patient_id, encounter_datetime, drug.name instructions"],
           :group => [:patient_id], :conditions => ["drug.name = ?  " +
                                                       "AND DATE(encounter_datetime) <= ? AND encounter.patient_id IN (?)", "SP (3 tablets)",
-                                                   (@startdate.to_date + @preg_range), @cohortpatients]).collect { |o|
+                                                   ((@startdate.to_date + @preg_range) - 1.day), @cohortpatients]).collect { |o|
           [o.patient_id, o.encounter_id]
-        }.delete_if { |x, y| y.to_i != 1 }.collect { |p, c| p }
+        }.delete_if { |x, y| y.to_i != 1 }.collect { |p, c| p }.uniq
   end
 
   def fansida__sp
@@ -283,7 +292,7 @@ class Reports
     :select => ["encounter.patient_id, DATE(encounter_datetime) datetime, drug.name instructions"],
     :conditions => ["drug.name = ?  AND (DATE(encounter_datetime) >= #{@lmp}" +
       "AND DATE(encounter_datetime) <= ?) AND encounter.patient_id IN (?)", "SP (3 tablets)",
-       (@startdate.to_date + @preg_range), @cohortpatients]).each { |o|
+       ((@startdate.to_date + @preg_range) - 1.day), @cohortpatients]).each { |o|
         fansida[o.patient_id] = [] if fansida[o.patient_id].blank?
         fansida[o.patient_id] << o.datetime if ! fansida[o.patient_id].include?(o.datetime)
       }
@@ -307,7 +316,7 @@ class Reports
                :select => ["encounter.patient_id, count(distinct(DATE(encounter_datetime))) encounter_id, drug.name instructions"],
                :group => [:patient_id], :conditions => ["drug.name = ? " +
                                                             "AND DATE(encounter_datetime) <= ? AND encounter.patient_id IN (?)", "SP (3 tablets)",
-                                                         (@startdate.to_date + @preg_range), @cohortpatients]).collect { |o|
+                                                         ((@startdate.to_date + @preg_range) - 1.day), @cohortpatients]).collect { |o|
       [o.patient_id, o.encounter_id]
     }.delete_if { |x, y| y.to_i != 2 }.collect { |p, c| p }
 
@@ -319,7 +328,7 @@ class Reports
     :select => ["encounter.patient_id, count(distinct(DATE(encounter_datetime))) encounter_id, drug.name instructions"],
     :group => [:patient_id], :conditions => ["drug.name = ?  " +
       "AND DATE(encounter_datetime) <= ? AND encounter.patient_id IN (?)", "SP (3 tablets)",
-       (@startdate.to_date + @preg_range), @cohortpatients]).collect { |o|
+       ((@startdate.to_date + @preg_range) - 1.day), @cohortpatients]).collect { |o|
         [o.patient_id, o.encounter_id]
       }.delete_if { |x, y| y.to_i < 3 }.collect { |p, c| p }
 
@@ -334,7 +343,7 @@ class Reports
       "COALESCE(SUM(DATEDIFF(auto_expire_date, start_date)), 0) orderer"], :group => [:patient_id],
       :conditions => ["drug.name = ? AND (DATE(encounter_datetime) >= #{@lmp} " +
         "AND DATE(encounter_datetime) <= ?) AND encounter.patient_id IN (?)", "Fefol (1 tablet)",
-         (@startdate.to_date + @preg_range), @cohortpatients]).each { |o|
+         ((@startdate.to_date + @preg_range) - 1.day), @cohortpatients]).each { |o|
           next if ! fefol[o.patient_id].blank?
           fefol[o.patient_id] = o.orderer #if ! fefol[o.patient_id].include?(o.datetime)
         }
@@ -356,7 +365,7 @@ class Reports
                :select => ["encounter.patient_id, count(*) encounter_id, drug.name instructions"],
                :group => [:patient_id], :conditions => ["drug.name = ? " +
                                                             "AND DATE(encounter_datetime) <= ? AND encounter.patient_id IN (?)", "SP (3 tablets)",
-                                                       (@startdate.to_date + @preg_range), @cohortpatients]).collect { |o|
+                                                       ((@startdate.to_date + @preg_range) - 1.day), @cohortpatients]).collect { |o|
       [o.patient_id, o.encounter_id]
     }.delete_if { |x, y| y != 3 }.collect { |p, c| p }
 
@@ -369,7 +378,7 @@ class Reports
                                "COALESCE(SUM(DATEDIFF(auto_expire_date, start_date)), 0) orderer"], :group => [:patient_id],
                :conditions => ["drug.name = ? AND (DATE(encounter_datetime) >= ? " +
                                    "AND DATE(encounter_datetime) <= ?) AND encounter.patient_id IN (?)", "Fefol (1 tablet)",
-                               @startdate.to_date, (@startdate.to_date + @preg_range), @cohortpatients]).collect { |o|
+                               @startdate.to_date, ((@startdate.to_date + @preg_range) - 1.day), @cohortpatients]).collect { |o|
       [o.patient_id, o.orderer] }.delete_if { |x, y| y >= 120 }.collect { |p, c| p }
 
   end
@@ -382,7 +391,7 @@ class Reports
                                "COALESCE(SUM(DATEDIFF(auto_expire_date, start_date)), 0) orderer"], :group => [:patient_id],
                :conditions => ["drug.name = ? AND (DATE(encounter_datetime) >= ? " +
                                    "AND DATE(encounter_datetime) <= ?) AND encounter.patient_id IN (?)", "Fefol (1 tablet)",
-                               @startdate.to_date, (@startdate.to_date + @preg_range), @cohortpatients]).collect { |o|
+                               @startdate.to_date, ((@startdate.to_date + @preg_range) - 1.day), @cohortpatients]).collect { |o|
       [o.patient_id, o.orderer] }.delete_if { |x, y| y < 120 }.collect { |p, c| p }
 
   end
@@ -395,7 +404,7 @@ class Reports
                                        "AND DATE(encounter_datetime) <= ?) AND encounter.patient_id IN (?)",
                                    ConceptName.find_by_name("Syphilis Test Result").concept_id,
                                    ConceptName.find_by_name("Positive").concept_id, "Positive",
-                                    (@startdate.to_date + @preg_range), @cohortpatients]).collect { |e| e.patient_id }
+                                    ((@startdate.to_date + @preg_range) - 1.day), @cohortpatients]).collect { |e| e.patient_id }
   end
 
 
@@ -406,7 +415,7 @@ class Reports
                                        "AND DATE(encounter_datetime) <= ?) AND encounter.patient_id IN (?)",
                                    ConceptName.find_by_name("Syphilis Test Result").concept_id,
                                    ConceptName.find_by_name("Negative").concept_id, "Negative",
-                                   (@startdate.to_date + @preg_range), @cohortpatients]).collect { |e| e.patient_id }
+                                   ((@startdate.to_date + @preg_range) - 1.day), @cohortpatients]).collect { |e| e.patient_id }
   end
 
 
@@ -417,7 +426,7 @@ class Reports
                                        "AND DATE(encounter_datetime) <= ?) AND encounter.patient_id IN (?)",
                                    ConceptName.find_by_name("Syphilis Test Result").concept_id,
                                    ConceptName.find_by_name("Not Done").concept_id, "Not Done",
-                                 (@startdate.to_date + @preg_range), @cohortpatients]).collect { |e| e.patient_id }
+                                   ((@startdate.to_date + @preg_range) - 1.day), @cohortpatients]).collect { |e| e.patient_id }
   end
 
   def hiv_test_result_prev_neg
@@ -443,7 +452,7 @@ class Reports
 					GROUP BY e.patient_id
 						HAVING DATE(date) > DATE(test_date)
 					",
-					 @cohortpatients, (@startdate.to_date + @preg_range), (@startdate.to_date + @preg_range)
+					 @cohortpatients, ((@startdate.to_date + @preg_range) - 1.day), ((@startdate.to_date + @preg_range) - 1.day)
 				]).map(&:patient_id)
 
 	return select
@@ -472,7 +481,7 @@ class Reports
                 GROUP BY e.patient_id
                 HAVING DATE(date) > DATE(test_date)
                 ",
-                @cohortpatients, (@startdate.to_date + @preg_range), (@startdate.to_date + @preg_range)
+                @cohortpatients, ((@startdate.to_date + @preg_range) - 1.day), ((@startdate.to_date + @preg_range) - 1.day)
                 ]).map(&:patient_id)
 	return select
   end
@@ -504,7 +513,7 @@ class Reports
                 GROUP BY e.patient_id
                 HAVING DATE(date) > DATE(test_date)
                 ",
-                @cohortpatients, (@startdate.to_date + @preg_range), (@startdate.to_date + @preg_range)
+                @cohortpatients, ((@startdate.to_date + @preg_range) - 1.day), ((@startdate.to_date + @preg_range) - 1.day)
                 ]).map(&:patient_id)
     return select
   end
@@ -535,7 +544,7 @@ class Reports
                 GROUP BY e.patient_id
                 HAVING DATE(date) > DATE(test_date)
                 ",
-                @cohortpatients, (@startdate.to_date + @preg_range), (@startdate.to_date + @preg_range)
+                @cohortpatients, ((@startdate.to_date + @preg_range) - 1.day), ((@startdate.to_date + @preg_range) - 1.day)
                 ]).map(&:patient_id)
     return select
   end
@@ -566,7 +575,7 @@ class Reports
                 GROUP BY e.patient_id
                 HAVING DATE(date) = DATE(test_date)
                 ",
-                @cohortpatients, (@startdate.to_date + @preg_range), (@startdate.to_date + @preg_range)
+                @cohortpatients, ((@startdate.to_date + @preg_range) - 1.day), ((@startdate.to_date + @preg_range) - 1.day)
                 ]).map(&:patient_id)
 
     return select
@@ -598,13 +607,16 @@ class Reports
                 GROUP BY e.patient_id
                 HAVING DATE(date) = DATE(test_date)
                 ",
-                @cohortpatients, (@startdate.to_date + @preg_range), (@startdate.to_date + @preg_range)
+                @cohortpatients,((@startdate.to_date + @preg_range) - 1.day), ((@startdate.to_date + @preg_range) - 1.day)
                 ]).map(&:patient_id)
 
     return select
   end
 
   def first_visit_hiv_not_done
+
+    #This has to be revised -
+
     first_visit_patient_ids = @anc_visits.reject { |x, y| y <= 1 }.collect { |x, y| x }.uniq
     first_visit_patient_ids = [0] if first_visit_patient_ids.blank?
 
@@ -614,7 +626,7 @@ class Reports
                                                 "AND DATE(encounter_datetime) <= ?) AND encounter.patient_id IN (?)",
                                             ConceptName.find_by_name("HIV status").concept_id,
                                             ConceptName.find_by_name("Not done").concept_id, "Not Done",
-                                             (@startdate.to_date + @preg_range), first_visit_patient_ids]).collect { |e| e.patient_id }
+                                            ((@startdate.to_date + @preg_range) - 1.day), first_visit_patient_ids]).collect { |e| e.patient_id }
 
     return select
 
@@ -643,7 +655,7 @@ class Reports
                   GROUP BY e.patient_id
                   HAVING DATE(date) = DATE(test_date)
                   ",
-                  @cohortpatients, (@startdate.to_date + @preg_range), (@startdate.to_date + @preg_range)
+                  @cohortpatients, ((@startdate.to_date + @preg_range) - 1.day), ((@startdate.to_date + @preg_range) - 1.day)
                   ]).map(&:patient_id)
       return select
   end
@@ -673,7 +685,7 @@ class Reports
               GROUP BY e.patient_id
               HAVING DATE(date) = DATE(test_date)
               ",
-              @cohortpatients, (@startdate.to_date + @preg_range), (@startdate.to_date + @preg_range)
+              @cohortpatients, ((@startdate.to_date + @preg_range) - 1.day), ((@startdate.to_date + @preg_range) - 1.day)
               ]).map(&:patient_id)
         return select
 
@@ -703,7 +715,7 @@ class Reports
             GROUP BY e.patient_id
             HAVING DATE(date) = DATE(test_date)
             ",
-            @cohortpatients, (@startdate.to_date + @preg_range), (@startdate.to_date + @preg_range)
+            @cohortpatients, ((@startdate.to_date + @preg_range) - 1.day), ((@startdate.to_date + @preg_range) - 1.day)
             ]).map(&:patient_id)
 
             return select
@@ -717,7 +729,7 @@ class Reports
                                                 "AND DATE(encounter_datetime) <= ?) AND encounter.patient_id IN (?)",
                                             ConceptName.find_by_name("HIV status").concept_id,
                                             ConceptName.find_by_name("Not done").concept_id, "Not Done",
-                                             (@startdate.to_date + @preg_range), @cohortpatients]).collect { |e| e.patient_id }
+                                            ((@startdate.to_date + @preg_range) - 1.day), @cohortpatients]).collect { |e| e.patient_id }
 
   end
 
@@ -754,7 +766,7 @@ class Reports
       JOIN encounter ON o.encounter_id = encounter.encounter_id
 			WHERE o.concept_id = (SELECT concept_id FROM concept_name WHERE name = 'LAST MENSTRUAL PERIOD')
 			AND p.patient_id IN (?) AND DATE(o.obs_datetime) BETWEEN #{@lmp} AND ?",
-                                      @positive_patients,  (@startdate.to_date + @preg_range)]).collect { |ob|
+                                      @positive_patients,  ((@startdate.to_date + @preg_range) - 1.day)]).collect { |ob|
       ident = ob.identifier
       if (!ob.value_datetime.blank? && @bart_patients["#{ident}"])
         start_date = @bart_patients["#{ident}"].to_date
@@ -974,8 +986,13 @@ class Reports
 
     uri = "http://#{login}:#{password}@#{server}/encounters/export_on_art_patients"
 
-    patient_identifiers = JSON.parse(RestClient.post(uri, paramz))
-
+    #patient_identifiers = JSON.parse(RestClient.post(uri, paramz))
+		patient_identifiers = JSON.parse(RestClient::Request.execute(:method => :post, 
+														:url => uri, 
+														:timeout => 90000000,
+														:open_timeout => 90000000, 
+														:payload => paramz
+													))
     return patient_identifiers
   end
 

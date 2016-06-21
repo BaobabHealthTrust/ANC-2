@@ -23,7 +23,16 @@
   <center>
     <h2 style="color: #6281a7;">&nbsp;</h2>
     <button onclick="parent.window.location = '/people/verify_patient_npids/<%= current_user.user_id %>';">
-      Patient IDs
+      Remote Counts
+    </button>
+    <button onclick="parent.window.location = '/patients/merge_menu'">
+      Merge Duplicate Patients
+    </button>
+    <button onclick="parent.window.location = '/patients/incomplete_visits/1'">
+     View Incomplete Visits
+    </button>
+    <button onclick="parent.window.location = '/encounters/duplicate_encounters';">
+      View Duplicate Encounters
     </button>
   </center>
 </body>

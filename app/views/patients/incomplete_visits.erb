@@ -1,0 +1,47 @@
+<style type="text/css">
+  body {
+    -moz-user-select:none;
+  }
+
+  #stats {
+    width:96%;
+    border:1px solid #eee;
+    margin:auto;
+    margin-top: 0px;
+    background:white;
+  }
+  #stats td, #stats th {
+    text-align:center;
+    padding: 0.5%;
+  }
+  #stats tr:nth-child(even){
+    background-color: #eeeef7;
+  }
+   #stats tr td:nth-child(2){
+    text-align: left;
+    padding-left: 2%;
+  }
+</style>
+  <div id="contentt">
+    <h2 style="text-align: center; color: #6281a7; margin-top: 3px; margin-bottom: 3px;">Incomplete Visits from <%=@start_date%> to <%=@end_date%></h2>
+    <table id="stats" style="margin-bottom: 8px;" cellpadding="5">
+      <tr style="color: #fff; background-color: #6281a7;">
+        <th>#</th>
+        <th>Patient Name</th>
+        <th>National ID</th>
+        <th>Visit Number</th>
+        <th>Visit Date</th>
+      </tr>
+      <% count =1 %>
+      <%@incomplete_visits.each do |visit| %>
+          <tr>
+          <td><%=count%></td>
+          <td><%=visit["name"]%></td>
+          <td><%=visit["n_id"]%></td>
+          <td><%=visit["visit_no"]%></td>
+          <td><%=visit["visit_date"]%></td>
+          <% count = count + 1 %>
+      </tr>
+      <%end%>
+    </table>
+  </div>

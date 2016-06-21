@@ -1,0 +1,120 @@
+<script>
+    tt_cancel_destination = "/?active_tab=tab2";
+    function load(patient_id, encounter_type, date){
+        __$("iframe").src = "";
+        showPopup();
+        __$("iframe").src = "/encounters/duplicates?patient_id=" + patient_id + "&encounter_type=" + encounter_type + "&date=" + date;
+    }
+    function showPopup(){
+        __$("iframe").src = "";
+        var shield = document.createElement("div");
+        shield.id = "shield";
+        shield.style.position = "absolute";
+        shield.style.top = "0px";
+        shield.style.left = "0px";
+        shield.style.width = "100%";
+        shield.style.height = "100vh";
+        shield.style.background = "black";
+        shield.style.opacity = "0.5";
+        shield.style.zIndex = 1000;
+        shield.onmousedown = function(){
+            __$("iframe").style.display = "none";
+            this.parentNode.removeChild(this);
+        }
+        __$("iframe").style.zIndex = "1005";
+        document.body.appendChild(shield);
+        __$("iframe").style.display = "";
+    }
+
+</script>
+
+<style>
+    #Unknown {
+        display: none;
+    }
+    th{
+        text-align: left;
+    }
+    .even, .odd{
+        cursor: pointer;
+    }
+    .even td, .odd td{
+        padding: 5px;
+    }
+
+    .even td{
+        background-color: white;
+    }
+
+    .odd td{
+        background-color: #EEEEE7;
+    }
+    th{
+        background-color: lightsteelblue;
+        border-radius: 1px;
+        color: black;
+    }
+    td{
+        color: #242E35;
+    }
+    .header th{
+        padding: 10px;
+    }
+    iframe{
+        position: absolute;
+        left: 2%;
+        top:6%;
+        height: 60vh;
+        background: white;
+        width: 85%;
+        border: 2px solid black;
+        border-radius: 5px;
+        overflow-x: hidden; overflow-y: hidden;
+        box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    }
+</style>
+
+<div style="width: 100%; overflow:auto;font-size: 1.2em;">
+  <table style="width:100%;border: 1px solid gray">
+    <tr>
+      <td style="width:90%;overflow:auto;">
+        <div style="height:90vh;;overflow:auto;">
+          <table style="width:100%;border-left: 1px solid gray">
+            <tr class="header">
+              <th>#</th>
+              <th>Patient Name</th>
+              <th>National ID</th>
+              <th>Encounter Type</th>
+              <th>Date Captured</th>
+              <th>Total Found</th>
+            </tr>
+            <% @count = 0 %>
+            <% @duplicate_encounters.each do |encounter|
+              patient = Patient.find(encounter['patient_id'])
+              @count += 1
+            %>
+
+                <tr class="<%=cycle('even', 'odd')%>">
+                  <td><%= @count %></td>
+                  <td><%= encounter['name']%></td>
+                  <td><%= encounter['national_id']%></td>
+                  <td><%= encounter['type']%></td>
+                  <td><%= encounter['visit_date'].to_date.strftime("%d %b, %Y")%></td>
+                  <td><%= encounter['c']%></td>
+                  <td  onclick="load('<%= encounter['patient_id']%>',
+                          '<%= encounter['encounter_type']%>',
+                          '<%= encounter['visit_date']%>'
+                          )" class="btn blue button"><span>View</span></td>
+                </tr>
+            <% end %>
+          </table>
+        </div>
+      </td>
+
+    </tr>
+  </table>
+</div>
+
+<iframe src="" id="iframe" style="display: none;">
+
+</iframe>
