@@ -1,0 +1,87 @@
+<title>Missing ART Status</title>
+
+<script>
+    function loadVisit(patient_id, visit_date){
+       location.href = "/patients/show/" + patient_id + "?session_date=" + visit_date.replace(/\//g, "-") +"&data_cleaning=true" + "&from_encounters=false";
+    }
+</script>
+<style type="text/css">
+  body {
+    -moz-user-select:none;
+  }
+
+  #stats, #stats2 {
+    width:99%;
+    border:1px solid #eee;
+    margin:auto;
+    margin-top: 0px;
+    background:white;
+  }
+  #stats2 td, #stats th {
+    text-align:center;
+    padding: 0.5%;
+  }
+  #stats tr:nth-child(even){
+    background-color: #eeeef7;
+  }
+   #stats tr td:nth-child(2){
+    text-align: left;
+    padding-left: 2%;
+  }
+    th{
+        background-color: #6281a7;
+        border-radius: 1px;
+        color: white;
+        text-align: center;
+        font-size: 22.5px
+    }
+    td{
+        color: #242E35;
+    }
+    .header th{
+        padding: 10px;
+    }
+
+</style>
+
+
+
+
+  <div id="contentt">
+    <h2 style="text-align: center; color: #6281a7; margin-top: 3px; margin-bottom: 3px;">Patients With Missing ART Status as of <%= params[:end_date].to_date.strftime("%d-%b-%Y")%></h2>
+    <table id="stats2" style="margin-bottom: 8px;" cellpadding="5" width="90%">
+      <tr style="color: #fff; background-color: #6281a7;">
+          <th class="header" style="width:1%;padding: 3px;">#</th>
+          <th class="header" style="width:22%;">Patient Name</th>
+          <th class="header" style="width:12%;">DOB</th>
+          <th class="header" style="width:12%;">National ID</th>
+          <th class="header" style="width:16%;">Date Tested for HIV</th>
+          <th class="header" style="width:12%;"></th>
+        </tr>
+        </table>
+        <div class="div_scroll">
+            <table id="stats" style="margin-bottom: 8px;" cellpadding="5" width="90%">
+        <% count =1 %>
+        <%@people.each do |p| %>
+        
+            <tr>
+            <td style="width:1%;"><%=count%></td>
+            <td style="width:22%;"><%=p["name"]%></td>
+            <td style="width:12%;"><%=p["dob"]%></td>
+            <td style="width:12%;"><%=p["npid"]%></td>
+            <td style="width:16%;"><%=p["date_tested"]%></td>
+            <td style="width:12%;" onclick="loadVisit('<%= p['patient_id'] %>', '<%= p["date_tested"]%>')" class="btn blue button" ><span>Load Visit</span></td>
+            <% count = count + 1 %>
+
+        </tr>
+        <%end%>
+      </table>
+      </div>
+    </div>
+  </div>
+<script type="text/javascript">
+  var height = 0.7 * window.innerHeight;
+  if ($("#stats").height() > height){
+      $(".div_scroll").css({"height":height,"overflow-y":"scroll"});
+    }
+</script>

@@ -20,7 +20,11 @@
   <script type="text/javascript">
       jQuery(document).ready(function($) {
           $('#logout').click(function() {
-              window.location = '/'
+//              if (window.location = '/reports/appointments_on_date') {
+//                window.location = '/reports/list_appointments';
+//              }else{
+                window.location = '/'
+//              }
           })
           $('#find').click(function() {
 
@@ -109,7 +113,7 @@
 
     <div id="footer" class="dark">
       <div id="buttons" class="buttons">
-        <button id="logout" class="blue left" style="position :relative; float:right;"><span>Finish</span></button>
+        <button id="logout" class="green left" style="position :relative; float:right;"><span>Finish</span></button>
         <% if (@user['name'].upcase rescue nil) == "SUPER USER" %>
             <!--button id="staging" class="yellow"><span>Staging</span></button-->
         <% end %>

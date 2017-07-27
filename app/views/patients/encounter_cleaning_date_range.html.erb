@@ -7,10 +7,9 @@
         display: none;
     }
 </style>
-<form action="/people/verify_patient_npids" method='post'>
+<form action="/encounters/duplicate_encounters" method='post'>
 
   <%= text_field_tag("start_date", nil, {:field_type => 'date', :helpText => 'Start date'}) %> <br>
   <%= text_field_tag("end_date", nil, {:field_type => 'date', :helpText => 'End date'})%><br>
-
   <%= submit_tag value="Submit"%>
 </form>

@@ -21,18 +21,23 @@
 </head>
 <body>
   <center>
-    <h2 style="color: #6281a7;">&nbsp;</h2>
+<h2 style="color: #6281a7;">Data Cleaning Tools</h2>
     <button onclick="parent.window.location = '/people/verify_patient_npids/<%= current_user.user_id %>';">
-      Remote Counts
+      Missing ART Status
     </button>
+    <!-- Mearge Duplicates Button 
     <button onclick="parent.window.location = '/patients/merge_menu'">
       Merge Duplicate Patients
     </button>
+    -->
     <button onclick="parent.window.location = '/patients/incomplete_visits/1'">
      View Incomplete Visits
     </button>
     <button onclick="parent.window.location = '/encounters/duplicate_encounters';">
       View Duplicate Encounters
+    </button>
+    <button onclick="parent.window.location = '/patients/void_patients';">
+      Void Patients
     </button>
   </center>
 </body>

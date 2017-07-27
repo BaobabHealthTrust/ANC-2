@@ -127,6 +127,8 @@ module ANCService
       aborted = abortion_check_encounter.observations.collect{|ob| ob.answer_string.downcase.strip if ob.concept_id == ConceptName.find_by_name("PREGNANCY ABORTED").concept_id}.compact.include?("yes")  rescue false
 
       date_aborted = abortion_check_encounter.observations.find_by_concept_id(ConceptName.find_by_name("DATE OF SURGERY").concept_id).answer_string rescue nil
+      recent_lmp = self.find_by_sql(["SELECT * from obs WHERE person_id = #{self.patient.id} AND concept_id =
+                          (SELECT concept_id FROM concept_name WHERE name = 'DATE OF LAST MENSTRUAL PERIOD' LIMIT 1)"]).last.answer_string.squish.to_date rescue nil
 
       self.patient.encounters.find(:all, :order => ["encounter_datetime DESC"]).each{|e|
         if e.name == "CURRENT PREGNANCY" && !pregnancies[e.encounter_datetime.strftime("%Y-%m-%d")]
@@ -163,11 +165,16 @@ module ANCService
         end
       }
 
+      if recent_lmp.present?
+        current_range["START"] = recent_lmp
+        current_range["END"] = current_range["START"] + 9.months
+      end
+
       if (abortion_check_encounter.present? && aborted && date_aborted.present? && current_range["START"].to_date < date_aborted.to_date rescue false)
 
     		current_range["START"] = date_aborted.to_date + 10.days
     		current_range["END"] = current_range["START"] + 9.months
-    	end
+      end
 
       current_range["END"] = current_range["START"] + 7.day + 45.week unless ((current_range["START"]).to_date.blank? rescue true)
 

@@ -1,0 +1,109 @@
+<script>
+    function loadVisit(patient_id, visit_date){
+       location.href = "../patients/show/" + patient_id + "?session_date=" + visit_date.replace(/\//g, "-") +"&data_cleaning=true" + "&from_encounters=true";
+    }
+
+
+    var tt_cancel_destination = "/clinic"  
+
+</script>
+
+<style>
+    #Unknown {
+        display: none;
+    }
+    th{
+        text-align: left;
+    }
+    .even, .odd{
+        cursor: pointer;
+    }
+    .even td, .odd td{
+        padding: 5px;
+    }
+
+    .even td{
+        background-color: white;
+        text-align: center;
+    }
+
+    .odd td{
+        background-color: #EEEEE7;
+        text-align: center;
+    }
+    th{
+        background-color: #6281a7;
+        border-radius: 1px;
+        color: white;
+        text-align: center;
+    }
+    td{
+        color: #242E35;
+    }
+    .header th{
+        padding: 10px;
+    }
+    iframe{
+        position: absolute;
+        left: 2%;
+        top:6%;
+        height: 60vh;
+        background: white;
+        width: 85%;
+        border: 2px solid black;
+        border-radius: 5px;
+        overflow-x: hidden; overflow-y: hidden;
+        box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    }
+</style>
+   <h2 style="text-align: center; color: #6281a7; margin-top: 3px; margin-bottom: 3px;">Duplicate encounters from <%=@start_date%> to <%=@end_date%></h2>
+<div style="width: 100%; overflow:hidden;font-size: 1.2em; margin-bottom: 3px; height:84.0%;">
+
+  <table style="width:100%;border: 1px solid gray; background-color: white; ">
+    <tr>
+      <td style="width:90%;overflow:auto;">
+        <div style="height:70vh;;overflow:auto;" class="div_scroll">
+
+          <table style="width:99%;border-left: 1px solid gray height:100%;">
+            <tr class="header">
+              <th>#</th>
+              <th>Patient Name</th>
+              <th>National ID</th>
+              <th>Encounter Type</th>
+              <th>Date Captured</th>
+              <th>Total Found</th>
+            </tr>
+            <% @count = 0 %>
+            <% @duplicate_encounters.each do |encounter|
+              patient = Patient.find(encounter['patient_id'])
+              @count += 1
+            %>
+
+                <tr class="<%=cycle('even', 'odd')%>">
+                  <td><%= @count %></td>
+                  <td><%= encounter['name']%></td>
+                  <td><%= encounter['national_id']%></td>
+                  <td><%= encounter['type']%></td>
+                  <td><%= encounter['visit_date'].to_date.strftime("%d %b, %Y")%></td>
+                  <td><%= encounter['c']%></td>
+                  <td  onclick="loadVisit('<%= encounter['patient_id']%>',
+                          '<%= encounter['visit_date']%>'
+                          )" class="btn blue button"><span>Load Visit</span></td>
+                </tr>
+            <% end %>
+          </table>
+        </div>
+      </td>
+
+    </tr>
+  </table>
+</div>
+<iframe src="" id="iframe" style="display: none;">
+
+</iframe>
+
+<div class = "buttonsDiv">
+  <button onclick="window.location = '/clinic';" class="button navButton red" id="cancelButton" style="position: absolute; z-index: 100; margin-top: 10px;"><span>Cancel</span>
+      </button>
+  <button id="finishButton" class="button navButton green" onclick="if (tt_cancel_destination) window.location = tt_cancel_destination;"><span>Finish</span></button>
+</div>

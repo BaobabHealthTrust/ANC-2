@@ -95,6 +95,15 @@ class Patient < ActiveRecord::Base
         EncounterType.find_by_name("Current Pregnancy").id, start_date.to_date, end_date.to_date]).encounter_datetime rescue nil
   end
 
+  def date_registered1
+
+    date = self.encounters.last(:select => ['encounter_datetime'], :conditions => ['encounter_type = ?',
+    EncounterType.find_by_name("REGISTRATION").id]) rescue nil
+
+    date.encounter_datetime
+
+  end
+
   def in_bart?
 
     available = Bart2Connection::PatientIdentifier.find_by_identifier_and_identifier_type(self.national_id,

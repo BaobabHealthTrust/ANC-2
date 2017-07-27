@@ -10,7 +10,7 @@ class PeopleController < GenericPeopleController
   end
 
   def create
-    success = false
+
     Person.session_datetime = session[:datetime].to_date rescue Date.today
     identifier = params[:identifier] rescue nil
     if identifier.blank?
@@ -18,28 +18,16 @@ class PeopleController < GenericPeopleController
     end rescue nil
 
     if create_from_dde_server
-      unless identifier.blank?
-        params[:person].merge!({"identifiers" => {"National id" => identifier}})
-        success = true
-        person = PatientService.create_from_form(params[:person])
-        if identifier.length != 6
-          patient = DDEService::Patient.new(person.patient)
-          national_id_replaced = patient.check_old_national_id(identifier)
-        end
+      formatted_demographics = DDE2Service.format_params(params, Person.session_datetime)
+      raise formatted_demographics.to_yaml
+
+      if DDE2Service.is_valid?(formatted_demographics)
+        response = DD2Service.create_from_dde2(formatted_demographics)
       else
-        person = PatientService.create_patient_from_dde(params)
-        success = true
+        flash[:error] = "Invalid demographics format posted to DDE2"
+        redirect_to "/" and return
       end
 
-      #If we are creating from DDE then we must create a footprint of the just created patient to
-      #enable future
-      DDEService.create_footprint(PatientService.get_patient(person).national_id, "ANC") rescue nil
-
-
-
-      #for now BART2 will use BART1 for patient/person creation until we upgrade BART1 to 2
-      #if GlobalProperty.find_by_property('create.from.remote') and property_value == 'yes'
-      #then we create person from remote machine
     elsif create_from_remote
       person_from_remote = PatientService.create_remote_person(params)
       person = PatientService.create_from_form(person_from_remote["person"]) unless person_from_remote.blank?
@@ -338,18 +326,73 @@ class PeopleController < GenericPeopleController
 
   def verify_patient_npids
 
-    if request.get?
-      render :template => "/people/data_cleaning_date_range" and return
+    if request.get? && params[:type].blank?
+      render :template => "/people/start_and_end_date" and return
     else
+
       local_patients = []
-      Patient.find_by_sql(["SELECT * FROM patient
-                                    WHERE patient_id IN (
-                                      SELECT DISTINCT(patient_id) FROM encounter WHERE DATE(encounter_datetime) BETWEEN ? AND ?
-                                    )",
-                                    params[:start_date].to_date, params[:end_date].to_date]).each do |p|
-          local_patients << [p, p.person.name]
+
+      session[:cleaning_params] = params
+
+      hiv_concept_id = ConceptName.find_by_name("HIV Status").concept_id
+      on_art_concept_id = ConceptName.find_by_name("On ART").concept_id
+      positive_concept_id = ConceptName.find_by_name("Positive").concept_id rescue -1
+      art_concept_id = ConceptName.find_by_name("Reason For Exiting Care").concept_id
+      art_concept_value = ConceptName.find_by_name("Already on ART at another facility").concept_id rescue -1
+      art_concept_value2 = ConceptName.find_by_name("PMTCT to be done in another room").concept_id rescue -1
+      art_concept_values = "#{art_concept_value}, #{art_concept_value2}"
+      
+      local_npids = Encounter.find_by_sql(["SELECT pi.identifier FROM encounter e
+                                INNER JOIN obs o ON o.encounter_id = e.encounter_id AND o.concept_id = #{hiv_concept_id}
+                                  AND ((o.value_coded = #{positive_concept_id}) OR (o.value_text = 'Positive'))
+                                INNER JOIN patient_identifier pi ON pi.patient_id = e.patient_id AND pi.identifier_type = 3
+                              WHERE e.voided = 0 AND DATE(e.encounter_datetime) BETWEEN ? AND ?",params[:start_date], params[:end_date].to_date]).map(&:identifier).uniq 
+                       
+      sql_arr = "'" + ([-1] + local_npids).join("', '") + "'"
+      remote_npids = Bart2Connection::PatientProgram.find_by_sql(["SELECT pi.identifier FROM patient_program pg
+                                INNER JOIN patient_identifier pi ON pi.patient_id = pg.patient_id
+                              WHERE pi.identifier IN (#{sql_arr}) AND pg.program_id = 1 AND DATE(pg.date_created) <= ?
+                              ",  params[:end_date].to_date]).map(&:identifier).uniq 
+
+      local_art_status_npids = Encounter.find_by_sql(["SELECT pi.identifier FROM encounter e
+                                INNER JOIN obs o ON o.encounter_id = e.encounter_id AND o.concept_id = #{art_concept_id }
+                                  AND ((o.value_coded IN (#{art_concept_values}))
+                                        OR (o.value_text IN ('Already on ART at another facility', 'PMTCT to be done in another room')))
+                                INNER JOIN patient_identifier pi ON pi.patient_id = e.patient_id AND pi.identifier_type = 3
+                              WHERE e.voided = 0 AND DATE(e.encounter_datetime) BETWEEN ? AND ?",params[:start_date], params[:end_date].to_date]).map(&:identifier).uniq 
+
+      
+      on_art_question = Encounter.find_by_sql(["SELECT pi.identifier FROM encounter e
+                                INNER JOIN obs o ON o.encounter_id = e.encounter_id AND o.concept_id = #{on_art_concept_id }                                
+                                INNER JOIN patient_identifier pi ON pi.patient_id = e.patient_id AND pi.identifier_type = 3
+                              WHERE e.voided = 0 AND DATE(e.encounter_datetime) BETWEEN ? AND ?",
+                              params[:start_date], params[:end_date].to_date]).map(&:identifier).uniq 
+       
+
+      identifiers = local_npids - (remote_npids + local_art_status_npids + on_art_question).uniq
+      sql_arr = "'" + ([-1] + identifiers).join("', '") + "'"
+
+      @people = []
+
+      Patient.find_by_sql("SELECT * FROM patient WHERE patient_id IN (
+                  SELECT patient_id FROM patient_identifier WHERE identifier IN (#{sql_arr})
+              )").each do |p|
+
+        person = p.person
+        test_date = Observation.find_by_sql("SELECT obs_datetime FROM obs WHERE obs.concept_id = #{hiv_concept_id}
+                        AND ((obs.value_coded = #{positive_concept_id}) OR (obs.value_text = 'Positive')) AND obs.person_id = #{p.patient_id}
+                      ").first.obs_datetime.to_date.strftime("%d-%b-%Y") rescue "N/A"
+
+        @people << {
+            'patient_id' => p.patient_id,
+            'name' => person.name,
+            'npid' => p.national_id,
+            'dob' => (person.birthdate_estimated.to_i == 1) ? "~ #{person.birthdate.to_date.strftime("%d-%b-%Y")}" : "#{person.birthdate.to_date.strftime("%d-%b-%Y")}",
+            'date_tested' => test_date
+        }
       end
-      @local_patients = local_patients.sort_by{|patient, name| [name]}
+
+      render :template => "/patients/missing_art_status", :layout => 'report' and return
     end
   end
 

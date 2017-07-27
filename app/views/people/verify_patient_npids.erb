@@ -1,3 +1,4 @@
+<title>Missing ART Status</title>
 <script>
     tt_cancel_destination = "/?active_tab=tab2";
     function loadRemoteDetails(npid){
@@ -39,7 +40,7 @@
 <div style="width: 100%; overflow:auto;font-size: 1.2em;">
     <table style="width:100%;border: 1px solid gray">
         <tr>
-            <td style="width:60%;overflow:auto;">
+            <td style="width:100%;overflow:auto;">
                 <div style="height:90vh;;overflow:auto;">
                     <table style="width:100%;border-left: 1px solid gray">
                         <tr class="header">
@@ -47,7 +48,7 @@
                         <th>National ID</th>
                         <th>Date of Birth</th>
                         <th>Date Registered</th>
-                        <th>Remote Count</th>
+                        <th>Load Visit</th>
                         </tr>
                         <% @local_patients.each do |patient, name|%>
                             <tr class="<%=cycle('even', 'odd')%>" onclick="loadRemoteDetails('<%= patient.national_id%>')">
@@ -69,4 +70,14 @@
             </td>
         </tr>
     </table>
+
+        <div id="footer" style="">
+          <div id="buttons" class="buttonsDiv" style="bottom:0px">
+            <button onclick="window.location = '/clinic';" class="button navButton red"
+              id="cancelButton" style="position: absolute; z-index: 100; margin-top: 10px;"><span>Cancel</span>
+            </button>
+            <button id="finishButton" class="button navButton green" onclick="if (tt_cancel_destination) window.location = tt_cancel_destination;"><span>Finish</span></button>
+            <div id="tt_extraButtons"/>
+        </div>
+
 </div>

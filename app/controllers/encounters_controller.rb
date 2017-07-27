@@ -270,7 +270,7 @@ class EncountersController < ApplicationController
     redirect_to next_task(@patient) and return unless params[:encounter_type]
     
     redirect_to :action => :create, 'encounter[encounter_type_name]' => params[:encounter_type].upcase, 'encounter[patient_id]' => @patient.id and return if ['registration'].include?(params[:encounter_type])
-
+    
     render :action => params[:encounter_type] if params[:encounter_type]
   end
 
@@ -447,19 +447,38 @@ class EncountersController < ApplicationController
   end
 
   def duplicate_encounters
-    @duplicate_encounters = ActiveRecord::Base.connection.select_all("
-   SELECT patient_id, encounter_type,
+    if request.get? && params[:type].blank?
+      render :template => "/patients/encounter_cleaning_date_range" and return  
+    else
+      @start_date = params[:start_date]
+      @end_date = params[:end_date]
+      @duplicate_encounters = ActiveRecord::Base.connection.select_all("
+      SELECT patient_id, encounter_type,
       (SELECT name FROM encounter_type WHERE encounter_type_id = encounter.encounter_type) type,
       (SELECT CONCAT(given_name, ' ', family_name) FROM person_name WHERE voided = 0 AND person_id = encounter.patient_id LIMIT 1) name,
       (SELECT identifier FROM patient_identifier WHERE voided = 0 AND patient_id = encounter.patient_id AND identifier_type = 3 LIMIT 1) national_id,
       DATE(encounter_datetime) visit_date, count(*) c
-    FROM encounter WHERE voided = 0
-    GROUP by patient_id, encounter_type, visit_date
+      FROM encounter WHERE voided = 0 AND Date(encounter_datetime) >= '#{@start_date}'
+      AND Date(encounter_datetime) <= '#{@end_date}'
+      GROUP by patient_id, encounter_type, visit_date
       HAVING
-		IF (type = 'VITALS',
-			 c > 2 ,
-			 c > 1)
-		;")
+      IF (type = 'VITALS',
+       c > 2 ,
+       c > 1)
+      ;")
+
+      
+      session[:cleaning_params] = params
+      render :layout => 'report'
+    end
+
+    @start_date = params[:start_date] || "2000-01-01".to_date
+    @end_date = params[:end_date] || Date.today
+
+
+
+
+
 
   end
 

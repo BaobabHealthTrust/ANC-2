@@ -1,0 +1,30 @@
+<script>
+    tt_cancel_destination = "/?active_tab=tab2";
+</script>
+
+<style>
+    #Unknown {
+        display: none;
+    }
+</style>
+<form action="/patients/void_patients" method='post'>
+
+   <%= text_field_tag("start_date", nil, {:field_type => 'date', :helpText => 'Start date'}) %> 
+
+  <%= text_field_tag("end_date", nil, {:field_type => 'date', :helpText => 'End date'})%>
+
+
+  <%= select_tag 'patient_category[]',
+	    options_for_select(@patient_categories, ''),
+        :id => 'patient_category',
+	    :helpText => "Select Patient Category" ,
+	    :multiple => true%>
+
+  <%= select_tag 'test_patient_names[]',
+                 options_for_select(@patient_names, ''),
+                 :condition => " tstPageValues[tstCurrentPage].match('Test Patient') ",
+                 :helpText => "Select Test Patient Names" ,
+                 :multiple => true %>
+
+  <%= submit_tag value="Submit"%>
+</form>

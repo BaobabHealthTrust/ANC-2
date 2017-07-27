@@ -1,8 +1,8 @@
   <%= javascript_include_tag "barcode" %>
   <script>
     <% 
-      nextpath = CoreService.get_global_property_value('portal_url')
-      if !nextpath.match(/^http\:\/\//i)
+      nextpath = CoreService.get_global_property_value('portal_url') rescue ""
+      if (!nextpath.match(/^http\:\/\//i) rescue false)
         nextpath = "http://" + nextpath
       end
     %>

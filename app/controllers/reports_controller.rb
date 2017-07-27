@@ -62,9 +62,7 @@ class ReportsController < ApplicationController
 
     @ttv__total_previous_doses_2 = report.ttv__total_previous_doses_2
 
-    @fansida__sp___number_of_tablets_given_1 = report.fansida__sp___number_of_tablets_given_1
-
-    @fansida__sp___number_of_tablets_given_2 = report.fansida__sp___number_of_tablets_given_2
+    @fansida__sp___number_of_tablets_given_1, @fansida__sp___number_of_tablets_given_2 = report.fansida__sp
 
     @fefo__number_of_tablets_given_1 = report.fefo__number_of_tablets_given_1
 
@@ -191,7 +189,7 @@ class ReportsController < ApplicationController
 
     @week_of_first_visit_2 = report.week_of_first_visit_2
 
-    @week_of_first_visit_unknown = @observations_total - (@week_of_first_visit_1 + @week_of_first_visit_2)
+    @week_of_first_visit_unknown = @new_women_registered - (@week_of_first_visit_1 + @week_of_first_visit_2)
 
     @pre_eclampsia_1 = report.pre_eclampsia_1
 
@@ -205,9 +203,9 @@ class ReportsController < ApplicationController
 
     @fansida__sp___number_of_tablets_given_0 = report.fansida__sp___number_of_tablets_given_0.uniq
 
-    @fansida__sp___number_of_tablets_given_1, @fansida__sp___number_of_tablets_given_2, @fansida__sp___number_of_tablets_given_more_than_2 = report.fansida__sp
+    @fansida__sp___number_of_tablets_given_1, @fansida__sp___number_of_tablets_given_6 = report.fansida__sp
 
-    #@fansida__sp___number_of_tablets_given_2 = report.fansida__sp___number_of_tablets_given_2
+    @fansida__sp___number_of_tablets_given_2 = @observations_total - (@fansida__sp___number_of_tablets_given_0 + @fansida__sp___number_of_tablets_given_1)
 
     #@fefo__number_of_tablets_given_2 = report.fefo__number_of_tablets_given_2
 
@@ -217,10 +215,10 @@ class ReportsController < ApplicationController
     #@fansida__sp___number_of_tablets_given_more_than_2 = @observations_total - (@fansida__sp___number_of_tablets_given_0 + @fansida__sp___number_of_tablets_given_1 + @fansida__sp___number_of_tablets_given_2)
 
     @fefo__number_of_tablets_given_1 = @observations_total - @fefo__number_of_tablets_given_2 #report.fefo__number_of_tablets_given_1
-
-    @albendazole = report.albendazole(1)
-
     @albendazole_more_than_1 = report.albendazole(">1")
+
+    @albendazole = report.albendazole(1) + @albendazole_more_than_1
+
     @albendazole_none = @observations_total - (@albendazole + @albendazole_more_than_1)
 
     @bed_net = report.bed_net
@@ -269,27 +267,49 @@ class ReportsController < ApplicationController
     #>>>>>>>>>>>>>>>>>>>>>>>>NEW ADDITIONS START<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
       @first_visit_hiv_test_result_prev_negative = report.first_visit_hiv_test_result_prev_negative
       @first_visit_hiv_test_result_prev_positive = report.first_visit_hiv_test_result_prev_positive
-
       @first_visit_new_negative = report.first_visit_new_negative
       @first_visit_new_positive = report.first_visit_new_positive
-      @first_visit_hiv_not_done = @observations_total - (@first_visit_new_positive +
-          @first_visit_new_negative + @first_visit_hiv_test_result_prev_positive + @first_visit_hiv_test_result_prev_negative)
+      #@first_visit_hiv_not_done = report.first_visit_hiv_not_done
+      @first_visit_hiv_not_done = (@new_women_registered - @first_visit_hiv_test_result_prev_negative -
+          @first_visit_hiv_test_result_prev_positive - @first_visit_new_negative - @first_visit_new_positive)
+
+      @final_visit_hiv_test_result_prev_negative = report.final_visit_hiv_test_result_prev_negative
+      @final_visit_hiv_test_result_prev_positive = report.final_visit_hiv_test_result_prev_positive
+      @final_visit_new_negative = report.final_visit_new_negative
+      @final_visit_new_positive = report.final_visit_new_positive
+      @final_visit_hiv_not_done = (report.final_visit_hiv_not_done - @final_visit_hiv_test_result_prev_negative -
+          @final_visit_hiv_test_result_prev_positive - @final_visit_new_negative - @final_visit_new_positive)
+    #@observations_total - (@first_visit_new_positive +
+          #@first_visit_new_negative + @first_visit_hiv_test_result_prev_positive + @first_visit_hiv_test_result_prev_negative)
 
       @total_first_visit_hiv_positive = (@first_visit_hiv_test_result_prev_positive + @first_visit_new_positive).delete_if{|p| p.blank?}
+
       @total_hiv_positive = @total_first_visit_hiv_positive
       @first_visit_not_on_art = report.first_visit_not_on_art
       @first_visit_on_art_zero_to_27 = report.first_visit_on_art_zero_to_27
       @first_visit_on_art_28_plus = report.first_visit_on_art_28_plus
       @first_visit_on_art_before = report.first_visit_on_art_before
       @first_visit_not_on_art =  (@total_first_visit_hiv_positive + @first_visit_not_on_art -
-        ( @first_visit_on_art_zero_to_27 +  @first_visit_on_art_28_plus + @first_visit_on_art_before)).uniq
+        (@first_visit_on_art_zero_to_27 +  @first_visit_on_art_28_plus + @first_visit_on_art_before)).uniq
+
+      @total_final_visit_hiv_positive = (@final_visit_hiv_test_result_prev_positive + @final_visit_new_positive).delete_if{|p| p.blank?}
+
+      @total_final_hiv_positive = @total_final_visit_hiv_positive
+      @final_visit_not_on_art = report.final_visit_not_on_art
+      @final_visit_on_art_zero_to_27 = report.final_visit_on_art_zero_to_27
+      @final_visit_on_art_28_plus = report.final_visit_on_art_28_plus
+      @final_visit_on_art_before = report.final_visit_on_art_before
+      @final_visit_not_on_art = (@total_final_visit_hiv_positive + @final_visit_not_on_art -
+          ( @final_visit_on_art_zero_to_27 + @final_visit_on_art_28_plus + @final_visit_on_art_before)).uniq
+
     #>>>>>>>>>>>>>>>>>>>>>>>>NEW ADDITIONS END<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     @nvp_baby__1 = report.nvp_baby__1
-    @no_nvp_baby__1 = (@total_first_visit_hiv_positive - @nvp_baby__1)
+    @no_nvp_baby__1 = (@total_final_visit_hiv_positive - @nvp_baby__1)
     @on_cpt__1 = report.on_cpt__1
-    @no_cpt__1 = (@total_first_visit_hiv_positive - @on_cpt__1)
+    @no_cpt__1 = (@total_final_visit_hiv_positive - @on_cpt__1)
 
     #filter for cohort validation rules
+=begin
     vars = ValidationRule.rules_xy
 
     @failures = []
@@ -308,7 +328,7 @@ class ReportsController < ApplicationController
         end
       end
     end
-
+=end
     render :layout => false
   end
 
@@ -476,6 +496,9 @@ class ReportsController < ApplicationController
       @first_visit_hiv_test_result_prev_negative = report.first_visit_hiv_test_result_prev_negative
       @first_visit_hiv_test_result_prev_positive = report.first_visit_hiv_test_result_prev_positive
 
+      @final_visit_hiv_test_result_prev_negative = report.final_visit_hiv_test_result_prev_negative
+
+
       @first_visit_new_negative = report.first_visit_new_negative
       @first_visit_new_positive = report.first_visit_new_positive
       @first_visit_hiv_not_done = report.first_visit_hiv_not_done
@@ -489,7 +512,7 @@ class ReportsController < ApplicationController
 
     #>>>>>>>>>>>>>>>>>>>>>>>>NEW ADDITIONS END<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     @nvp_baby__1 = report.nvp_baby__1
-    @no_nvp_baby__1 = (@total_first_visit_hiv_positive - @nvp_baby__1)
+    @no_nvp_baby__1 = (@total_final_visit_hiv_positive - @nvp_baby__1)
     @on_cpt__1 = report.on_cpt__1
     @no_cpt__1 = (@total_first_visit_hiv_positive - @on_cpt__1)
     #raise @fansida__sp___number_of_tablets_given_more_than_2.to_yaml
@@ -499,13 +522,92 @@ class ReportsController < ApplicationController
   def select
     render :layout => "application"
   end
+  def list_appointments
+          session[:clicked] = nil
+          year = session[:appointments_year] = params[:observations][0][:value_text]
+     
+          month = params[:observations][1][:value_text]
+
+          case month
+             when "January"
+                session[:appointments_month] = "01"
+              when "February"
+                session[:appointments_month] = "02"
+              when "March"
+                session[:appointments_month] = "03"
+              when "April"
+                session[:appointments_month] = "04"
+              when "May"
+                session[:appointments_month] = "05"
+              when "June"
+                session[:appointments_month] = "06"
+              when "July"
+                session[:appointments_month] = "07"
+              when "August"
+                session[:appointments_month] = "08"
+              when "September"
+                session[:appointments_month] = "09"
+              when "October"
+                session[:appointments_month] = "10"
+              when "November"
+                session[:appointments_month] = "11"
+              when "December"
+                session[:appointments_month] = "12"
+          end
+          @start_date = year + "-" + session[:appointments_month] + "-01"
+          @end_date = year + "-" + session[:appointments_month] + "-30"
+          session[:clicked] = nil
+          
+  end
+  def appointments_by_date
+         @appointments_month = session[:appointments_month]
+         @appointments_year = session[:appointments_year]
+         concept_id = ConceptName.find_by_name("APPOINTMENT DATE").concept_id
+         query = "SELECT date(obs_datetime), person_id FROM obs 
+                  WHERE obs.concept_id = #{concept_id}
+                  AND obs.voided = 0
+                  AND MONTH(obs.obs_datetime) = '#{@appointments_month}'
+                  AND YEAR(obs.obs_datetime) = '#{@appointments_year}'"
+          @appointment_result = ActiveRecord::Base.connection.select_all(query)
+          @appointments = @appointment_result.group_by {|ap| ap["date(obs_datetime)"] }
+          @appointments = @appointments.map {|k,v| [k, v.length]}
+          @appointments = Hash[@appointments]
+          render :text => (@appointments.to_json)
+          #raise a.inspect
+  end
+
+  def select_dates
+  end
+
+
+  def appointments_on_date 
+      @datetime = params[:date]
+      concept_id = ConceptName.find_by_name("APPOINTMENT DATE").concept_id
+      query = "SELECT date(encounter_datetime), identifier, given_name, family_name, birthdate FROM encounter 
+                  INNER JOIN obs 
+                  ON obs.encounter_id = encounter.encounter_id
+                  INNER JOIN concept
+                  ON concept.concept_id = obs.concept_id
+                  INNER JOIN person_name
+                  ON person_name.person_name_id = obs.person_id
+                  INNER JOIN patient_identifier
+                  ON patient_identifier.patient_id = person_name.person_name_id
+                  INNER JOIN person
+                  ON person.person_id = patient_identifier.patient_id
+                  WHERE concept.concept_id = '#{concept_id}'
+                  AND obs.voided = '0'
+                  AND date(obs.obs_datetime) = '#{@datetime}'"
+        @appointment_result = ActiveRecord::Base.connection.select_all(query)
+        render :layout => 'report'
+  end
+
 
   def decompose
-
+    #raise params.inspect
     @facility = Location.current_health_center.name rescue ''
 
     @data = []
-
+    # raise params[:patients].inspect
     if params[:patients]
       new_women = params[:patients].split(",")
       new_women = [-1] if new_women.blank?
@@ -513,10 +615,18 @@ class ReportsController < ApplicationController
       patients.each do |p|
         patient = ANCService::ANC.new(p)
         enc = Encounter.find_by_sql(["SELECT encounter_id FROM encounter WHERE patient_id = ?", p.id]).map(&:encounter_id)
+        #raise patient.patient.date_registered(session[:report_start_date], session[:report_end_date]).strftime("%d/%b/%Y").inspect
+        if params[:block] == "new registered women"
+          start_date = session[:report_start_date].to_date + 6.months
+          end_date = session[:report_end_date].to_date + 6.months
+        else
+          start_date = session[:report_start_date].to_date
+          end_date = session[:report_end_date].to_date
+        end
+#raise patient.patient.date_registered1.strftime("%d/%b/%Y").inspect
         @data << [patient.national_id,
           (patient.name rescue "&nbsp"),
-          (patient.patient.date_registered(session[:report_start_date],
-          session[:report_end_date]).strftime("%d/%b/%Y") rescue "&nbsp"),
+          (patient.patient.date_registered1.strftime("%d/%b/%Y") rescue "&nbsp"),
           (patient.birthdate_formatted rescue "&nbsp"),
           enc,
           p.id]

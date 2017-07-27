@@ -81,7 +81,7 @@
     var breech = 0;
     function ajaxify(cat, selected) {
 
-        if (selected == "Ball") {
+        if (selected == "Ball" || selected == "Nill papable") {
 
             __$("frame2").style.display = "none";
             __$("htext2").style.display = "none";
@@ -102,7 +102,7 @@
                 data = ["", "Right Occipito Anterior", "Left Occipito Anterior", "Unknown"].join('|')
                 handleResultData(cat, data, "cephalic_presentation");
             }
-            else if (selected.toLowerCase() == 'ball') {
+            else if (selected.toLowerCase() == 'ball' || selected.toLowerCase() == 'nill papable') {
 
                 data = "";
                 handleResultData(cat, data, "");
@@ -153,7 +153,7 @@
 
                 __$("position").value = "";
 
-                if(__$("presentation").value.toLowerCase().trim() == "ball"){
+                if(__$("presentation").value.toLowerCase().trim() == "ball" || __$("presentation").value.toLowerCase().trim() == "nill papable"){
 
                     __$("breech_presentation").value = "";
                     __$("cephalic_presentation").value = "";
@@ -537,7 +537,7 @@
     <%#= touch_hidden_tag "breech", @patient, nil, {:id => "breech"}%>
     <%#= touch_hidden_tag "Position", @patient, nil, {:id => "bed_net"}%>
 
-    <% @presentation = ["", "Cephalic", "Breech", "Ball"] %>
+    <% @presentation = ["", "Cephalic", "Breech", "Ball", "Nill papable"] %>
 
     <%= touch_select_tag "PRESENTATION", @patient, options_for_select(@presentation),
                          {:id => "presentation",
@@ -652,7 +652,7 @@
                          options_for_select([["", ""], ["Heard", "Heard"], ["Not heard", "Not heard"],
                                              ["Fetal Movement Felt (FMF)", "Fetal Movement Felt (FMF)"]]),
                          {:id => "enter_fetal_heart",
-                          :condition => "__$('presentation').value != 'Ball'",
+                          :condition => "__$('presentation').value != 'Ball' || __$('presentation').value != 'Nill papable'",
                           :tt_onLoad => "",
                           :helptext => "Fetal Heart Beat <span class='helper'> ANC Examination</span>"}, session_date %>
 

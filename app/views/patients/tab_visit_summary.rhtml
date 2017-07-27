@@ -141,9 +141,10 @@
   <body onload="setDefaultView()">
     <div id="content" style="background-color: #fff; border-top: 1px #fff solid; margin-top: 0px;">
 
-      <h2 style="color: #6281a7; margin-top: -2px; margin-bottom: 0px; padding-left: 10px;">
+      <h2 style="color: #6281a7; margin-top: -2px; margin-bottom: 0px; padding-left: 10px;width:99%;">
         Current Visit Summary
 
+        <span style="float:right"> Current Date: <%= session[:datetime].blank? ? Date.today : "<span style='color:red'>#{session[:datetime].to_date.strftime('%d-%b-%Y')}</span>" %></span>
       </h2>
 
       <table id="stats" style="margin-bottom: 8px;" cellpadding="5">

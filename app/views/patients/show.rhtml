@@ -5,8 +5,23 @@
 %>
 <script type="text/javascript" language="javascript">
     <!--
-    tt_cancel_show = "/clinic";
-    tt_cancel_destination = "/clinic";
+    <% if !session[:data_cleaning].blank? %>
+    cancel_url = "/<%=session[:cleaning_params][:controller]%>/<%=session[:cleaning_params][:action]%>?type=post";
+
+    <%
+     session[:cleaning_params].each do |key, value|
+      next if key.match(/action|controller/)
+      value = value.join("|") if value.class.to_s == "Array"
+      %>
+        cancel_url += "&<%=key%>=<%=value%>";
+      <% end %>
+      cancel_url = encodeURI(cancel_url);
+      tt_cancel_show = cancel_url
+      tt_cancel_destination = "/clinic";
+    <% else %>
+      tt_cancel_show = "/clinic";
+      tt_cancel_destination = "/clinic";
+    <% end %>
 
     var start_time = [
         <%= (@time rescue Time.now).year %>,
@@ -212,6 +227,7 @@
                       "visit_type" : "current_visit") %>/?patient_id=<%= @patient.id  %>'>Current Visit</option>
           <% end %>
 
+
           <% if current_user.activities.include?("Registration") %>
               <option value='/patients/demographics?patient_id=<%= @patient.id %>'>Demographics</option>
           <% end %>
@@ -253,6 +269,7 @@
           <option value='/patients/tab_printouts?patient_id=<%= @patient.id  %>'>Printouts</option>
 
         </select>
+
         <select id="navigation_links">
           <!--option link="/encounter_types?patient_id=<%= @patient.id  %>" ttSize = "160px">Tasks</option-->
           <%
@@ -268,19 +285,22 @@
                                             session[:token]}" %>" ttSize = "160px">Print ART Visit</option>
               <% end %>
 
-              <option link="/patients/proceed_to_pmtct?patient_id=<%= @patient.id  %>&to_art=yes" ttSize = "160px">ART</option>
+              <option link="/patients/proceed_to_pmtct?patient_id=<%= @patient.id  %>&to_art=yes" ttSize = "100px">ART</option>
           <% end %>
 
           <% if !@next_task.nil? && @next_task.url != "/patients/show/#{@patient.id}" %>
 
-              <option link="<%= @next_task.url  %>" ttSize = "160px">Continue</option>
+              <option link="<%= @next_task.url  %>" ttSize = "120px">Continue</option>
+
 
           <% else %>
-
-              <option link="/patients/outcome/?patient_id=<%= @patient.id %>" ttSize = "160px">Update Outcome</option>
-
+                <option link="/patients/outcome/?patient_id=<%= @patient.id %>" ttSize = "155px">Update Outcome</option>
           <%end%>
-
+          <% if session[:datetime].blank?%>
+            <option link="/patients/set_datetime/<%= @patient.id %>" ttSize = "120px">Set Date</option>
+          <% else %>
+            <option link="/patients/reset_datetime/<%= @patient.id %>" ttSize = "120px">Reset Date</option>
+        <% end %>
         </select>
       </td>
     </tr>

@@ -1,12 +1,20 @@
 class PatientsController < ApplicationController
   before_filter :find_patient, :except => [:void]
 
-  def show
+  def show      
+
+    if !params[:data_cleaning].blank?
+      session[:datetime] = params[:session_date].to_date
+      session[:data_cleaning] = true 
+    end
+
+    if !params[:from_encounters].blank?
+      session[:from_encounters] = params[:from_encounters]
+    end
 
     session_date = session[:datetime].to_date rescue Date.today
     next_destination = next_task(@patient) rescue nil
-    session[:update] = false
-    session[:home_url] = ""
+    session[:update] = false  
 
     if (next_destination.match("check_abortion") rescue false)
       redirect_to next_destination and return
@@ -16,7 +24,6 @@ class PatientsController < ApplicationController
     @alert_for_hiv_test = false
     last_known_hiv_test = Observation.find_last_by_concept_id(
       ConceptName.find_by_name("HIV STATUS").concept_id)
-
     @alert_for_hiv_test = true if ["unknown", "old_negative"].include?(
       @patient.resent_hiv_status?(session_date)) && !last_known_hiv_test.blank? &&
       last_known_hiv_test.obs_datetime.to_date < session_date
@@ -367,6 +374,13 @@ class PatientsController < ApplicationController
     redirect_to "/patients/show/#{@patient.id}" and return
   end
 
+
+  def void_patient
+    person = Person.find(params[:id])
+    person.void("ANC data cleaning")
+    render :text => "Ok"
+  end
+
   def print_registration
     print_and_redirect("/patients/national_id_label/?patient_id=#{@patient.id}", "/patients/demographics?patient_id=#{@patient.id}")
   end
@@ -520,15 +534,19 @@ class PatientsController < ApplicationController
   end
 
   def tab_visit_summary
+    session_date = session[:datetime].to_date rescue Date.today
     @data = []
-    @encounters = @patient.encounters.all(:order => "encounter_datetime DESC") rescue []
+    @encounters = @patient.encounters.all(:conditions => [" DATE(encounter_datetime) <= ? ", session_date],
+                                          :order => "encounter_datetime DESC") rescue []
 
     @external_encounters = []
 
     if !File.exists?("#{RAILS_ROOT}/config/dde_connection.yml")
-      @external_encounters = Bart2Connection::PatientIdentifier.search_by_identifier(@anc_patient.national_id).patient.encounters rescue [] if @anc_patient.hiv_status.downcase == "positive"
+      @external_encounters = Bart2Connection::PatientIdentifier.search_by_identifier(@anc_patient.national_id
+      ).patient.encounters.all(:conditions => [" DATE(encounter_datetime) <= ? ", session_date]) rescue [] if @anc_patient.hiv_status.downcase == "positive"
     else
-      @external_encounters = Bart2Connection::PatientIdentifier.search_or_create(@anc_patient.national_id).patient.encounters rescue [] if @anc_patient.hiv_status.downcase == "positive"
+      @external_encounters = Bart2Connection::PatientIdentifier.search_or_create(@anc_patient.national_id
+      ).patient.encounters.all(:conditions => [" DATE(encounter_datetime) <= ? ", session_date]) rescue [] if @anc_patient.hiv_status.downcase == "positive"
     end
 
     @encounter_data = @encounters.collect{|e|
@@ -1123,7 +1141,7 @@ class PatientsController < ApplicationController
   end
 
   def current_visit
-    @nc_types =  EncounterType.find(:all, :conditions => ["name in ('PREGNANCY STATUS', 'OBSERVATIONS', 'VITALS', 'TREATMENT', 'LAB RESULTS', " +
+    @nc_types =  EncounterType.find(:all, :conditions => ["name in ('ART_FOLLOWUP', 'PREGNANCY STATUS', 'OBSERVATIONS', 'VITALS', 'TREATMENT', 'LAB RESULTS', " +
           "'DIAGNOSIS', 'APPOINTMENT', 'UPDATE OUTCOME')"]).collect{|t| t.id}
 
     @encounters = @patient.encounters.find(:all, :conditions => ["encounter_type IN (?) AND " +
@@ -1182,7 +1200,35 @@ class PatientsController < ApplicationController
   end
 
   def update_demographics
-    ANCService.update_demographics(params)
+    ANCService.update_demographics(params) 
+
+    ######## Push details for de-duplication indexes ###########
+    person = Person.find(params['person_id'])
+    record= [{'first_name' => person.names.last.given_name,
+              'last_name' => person.names.last.family_name,
+              'birth_date' => person.birthdate,
+              'date_created' => (session[:datetime].to_date rescue Date.today),
+              "national_id" => person.patient.national_id,
+              'id' => person.id,
+              'patient_id' => person.id,
+              'home_district' => person.addresses.last.state_province}]
+
+    url = "http://#{CoreService.get_global_property_value('duplicates_check_url')}" rescue nil
+    RestClient.post("#{url}/write", record.to_json, :content_type => "application/json", :accept => 'json') rescue nil
+
+    response = RestClient.post("#{url}/read", record.to_json, :content_type => "application/json", :accept => 'json') rescue nil
+    if !response.blank?
+      response = response.first
+      response = response["#{person.id}"]['ids']
+
+      indexes = YAML.load_file "dup_index.yml"
+      file = File.open("dup_index.yml", "w")
+      indexes[person.id]['count'] = response.count
+      file.write indexes.to_yaml
+    end
+
+    ######## End ###############################################
+
     redirect_to :action => 'demographics', :patient_id => params['person_id'] and return
   end
 
@@ -1293,7 +1339,6 @@ class PatientsController < ApplicationController
         concept_id,encounter_type.id,date.strftime('%Y-%m-%d 00:00:00'),date.strftime('%Y-%m-%d 23:59:59')])
     count = count.values unless count.blank?
     count = '0' if count.blank?
-
     render :text => (count.first.to_i > 0 ? {params[:date] => count}.to_json : 0)
   end
 
@@ -1957,32 +2002,18 @@ class PatientsController < ApplicationController
 
   def merge
 
-    old_patient_id = params[:primary_pat]
-    new_patient_id = params[:person]["id"]	rescue nil
-
-
-    old_patient = Patient.find old_patient_id
-    new_patient = Patient.find new_patient_id
-
-    raise "Old patient does not exist" unless old_patient
-    raise "New patient does not exist" unless new_patient
-
-    ActiveRecord::Base.transaction do
-
-      PatientService.merge_patients(old_patient, new_patient)
-
-      # void patient
-      patient = old_patient.person
-      patient.void("Merged with patient #{new_patient_id}")
-
-      # void person
-      person = old_patient.person
-      person.void("Merged with person #{new_patient_id}")
-
-
-
+    (params[:secondary_patients] || []).each do |new_patient_id|
+        Patient.merge(params[:primary_patient], new_patient_id)
     end
-    return
+
+
+
+    indexes = YAML.load_file "dup_index.yml"
+    file = File.open("dup_index.yml", "w")
+    indexes["#{params[:primary_patient]}"]['count'] = ((indexes["#{params[:primary_patient]}"]['count'].to_i - params[:secondary_patients].count) rescue 0)
+    file.write indexes.to_yaml
+
+    render :text => "Ok"
   end
 
   def duplicate_menu
@@ -2064,12 +2095,57 @@ class PatientsController < ApplicationController
   end
 
   def merge_menu
-   render :layout => "report"
+    all = YAML.load_file "dup_index.yml"
+    @duplicates = []
+
+    all.each do |key, record|
+      next if (record['count'] == 0 rescue true) # has to be > 1
+      @duplicates << record
+    end
+
+    render :layout => 'report'
   end
 
+  def search
+    url_read = "http://#{CoreService.get_global_property_value('duplicates_check_url')}/read";
+    patient_ids = []
+    @duplicates = []
+
+    record = [{
+        "id" => params['id'],
+        "patient_id" => params["patient_id"],
+        "identifier" => params["identifier"],
+        "first_name" => params["first_name"],
+        "birthdate" => params["birthdate"],
+        "last_name" => params["last_name"],
+        "home_district" => params["home_district"],
+        "gender" => params["gender"]
+        }]
+
+    r = JSON.parse(RestClient.post(url_read, record.to_json, :content_type => "application/json",
+                               :accept => 'json')).each
+    r = r.first
+    patient_ids = r["#{params['patient_id']}"]['ids'].keys
+
+    Patient.find_by_sql(["SELECT * FROM patient WHERE voided = 0 AND patient_id IN (?)", patient_ids]).each do |patient|
+      person = patient.person
+      @duplicates << {
+          'id' => patient.id,
+          'patient_id' => patient.id,
+          'first_name' => person.names.last.given_name,
+          'last_name' =>  person.names.last.family_name,
+          'identifier' => patient.national_id,
+          'gender' => person.gender,
+          'birthdate' => person.birthdate,
+          'home_district' => person.addresses.last.state_province
+      }
+    end
+  end
 
   def search_all
+
     search_str = params[:search_str]
+    raise search_str.inspect
     side = params[:side]
     search_by_identifier = search_str.match(/[0-9]+/).blank? rescue false
 
@@ -2246,57 +2322,169 @@ EOF
     @encounter_types = ActiveRecord::Base.connection.select_all(
             "SELECT distinct encounter_type FROM encounter").collect{
               |c|EncounterType.find(c['encounter_type']).name}
-    render :template => "/patients/data_cleaning_date_range" and return  if request.get?
-    @start_date = params[:start_date] || "2000-01-01".to_date
+
+    if request.get? && params[:type].blank?
+      render :template => "/patients/data_cleaning_date_range" and return  
+    else
+      session[:cleaning_params] = params
+    end
+
+    @start_date = params[:start_date] || "1970-01-01".to_date
     @end_date = params[:end_date] || Date.today
 
     @incomplete_visits = []
 
-    complete_first_visit = params['incomplete_first_visit'].collect{|c| EncounterType.find_by_name(c).id.to_s}
-    complete_next_visits = params['incomplete_next_visit'].collect{|c| EncounterType.find_by_name(c).id.to_s}
+   
+    if params['incomplete_first_visit'].class.to_s == "String"
+        params['incomplete_first_visit'] = params['incomplete_first_visit'].split("|")
+        params['incomplete_next_visit'] = params['incomplete_next_visit'].split("|")
+    end
+
+    complete_first_visit = params['incomplete_first_visit'].collect{|c| EncounterType.find_by_name(c).id}
+    complete_next_visits = params['incomplete_next_visit'].collect{|c| EncounterType.find_by_name(c).id} 
+
+    first_visit =  complete_first_visit 
+    next_visits =  complete_next_visits
+    all_visits = first_visit.concat next_visits
+    all_visits = all_visits.uniq
+    
+    ####### added "Date(e.encounter_datetime) <= '#{@end_date}'AND voided = '0'" to Query 05-Jan-2017 20:44###
     query = "
       SELECT DATE(encounter_datetime) visit_date,
         GROUP_CONCAT(DISTINCT(e.encounter_type)) AS et,
         e.patient_id,
 		(SELECT COUNT(DISTINCT(DATE(encounter_datetime))) FROM encounter
 			WHERE patient_id = e.patient_id
+        AND voided = 0
 				AND DATE(encounter_datetime) <= DATE(e.encounter_datetime)
 			) visit_no
         FROM encounter e WHERE Date(e.encounter_datetime) >= '#{@start_date}'
         AND Date(e.encounter_datetime) <= '#{@end_date}'
+        AND voided = 0 
         GROUP BY e.patient_id, visit_date
       "
-    visits = ActiveRecord::Base.connection.select_all(query)
+    visits = ActiveRecord::Base.connection.select_all(query)    
     visits.each do |v| 
-      if v['visit_no'] == 1
-        if (complete_first_visit - v['et'].split(",")).length > 0
-            patient_name = Person.find(v['patient_id']).name
-            national_id = PatientIdentifier.find_by_patient_id(v['patient_id']).identifier
-            visit_hash = {"name"=> patient_name,
+            all_et = all_visits
+            patient_et =  v['et'].split(',')
+            patient_et = patient_et.map{|n|eval n}
+            a = all_et.to_set.subset?(patient_et.to_set)
+            if !a == true
+              patient_name = Person.find(v['patient_id']).name
+              national_id = PatientIdentifier.find_by_patient_id(v['patient_id']).identifier
+              visit_hash = {"name"=> patient_name,
                           "n_id"=>national_id,  
                           "visit_no"=> v['visit_no'],
-                          "visit_date"=>format_date(v['visit_date'])
+                          "visit_date"=>format_date(v['visit_date']),
+                          "patient_id"=> v['patient_id']
                         }
-            @incomplete_visits << visit_hash
-        end
-      else
-        if (complete_next_visits - v['et'].split(",")).length > 0
-            patient_name = Person.find(v['patient_id']).name
-            national_id = PatientIdentifier.find_by_patient_id(v['patient_id']).identifier
-            visit_hash = {"name"=> patient_name,
-                          "n_id"=>national_id,  
-                          "visit_no"=> v['visit_no'],
-                          "visit_date"=>format_date(v['visit_date'])
-                        }
-            @incomplete_visits << visit_hash
-      
-        end
-      end
+
+              @incomplete_visits << visit_hash
+            else
+
+            end
     end
     @start_date = format_date(@start_date)
     @end_date = format_date(@end_date)
     render :layout => 'report'
   end
+
+  def set_datetime
+    if request.post?
+      unless params[:set_day]== "" or params[:set_month]== "" or params[:set_year]== ""
+        # set for 1 second after midnight to designate it as a retrospective date
+        date_of_encounter = Time.mktime(params[:set_year].to_i,
+                                        params[:set_month].to_i,
+                                        params[:set_day].to_i,0,0,1)
+        session[:datetime] = date_of_encounter #if date_of_encounter.to_date != Date.today
+      end
+      if !params[:id].blank?
+        redirect_to "/patients/show/#{params[:id]}" and return
+      else
+        redirect_to :action => "index"
+      end
+    end
+    @patient_id = params[:id]
+  end
+
+  def reset_datetime
+    session[:datetime] = nil
+    if params[:id].blank?
+      redirect_to :action => "index" and return
+    else
+      redirect_to "/patients/show/#{params[:id]}" and return
+    end
+  end
+
+  def void_patients
+
+    if request.get? && params[:type].blank?
+
+      @patient_categories = ["Test Patients", "Male Clients"]
+      @patient_names = ["Test", "Patient", "Numeric Name"]
+      render :template => "/patients/void_patients_date_range" and return
+    else
+
+      params["patient_category"] =  params["patient_category"].split("|") if  (params["patient_category"].match("|") rescue false)
+      params["test_patient_names"] =  params["test_patient_names"].split("|") if  (params["test_patient_names"].match("|") rescue false)
+
+      session[:cleaning_params] = params
+
+      patients = []
+      @patients = []
+      user_person_ids = [-1] + User.find_by_sql("SELECT person_id FROM users WHERE person_id > 0").map(&:person_id)
+
+      if params[:patient_category].include?("Test Patients")
+        infixes = {"Test" => " REGEXP 'Test' ",
+                    "Patient" => " REGEXP 'Patient' ",
+                    "Numeric Name" => " REGEXP '([0-9]+\.*)+' " }
+
+        conditions = []
+        params[:test_patient_names].each do |name|
+          conditions << (" (given_name #{infixes[name]}  OR family_name #{infixes[name]}) " )
+        end
+
+        conditions = conditions.join(" OR ")
+        patients += Patient.find_by_sql(["SELECT person.person_id FROM person
+                                  INNER JOIN person_name ON person_name.person_id = person.person_id
+                                  WHERE #{conditions} AND person.voided = 0 AND person_name.voided = 0
+                                  AND person.person_id NOT IN (#{ user_person_ids.join(', ')})
+                                  AND DATE(person.date_created) BETWEEN ? AND ?
+                                  GROUP BY person.person_id ", params[:start_date].to_date, params[:end_date]]).map(&:person_id)
+      end
+
+      if params[:patient_category].include?("Male Clients")
+        patients += Patient.find_by_sql(["SELECT person.person_id FROM person
+                                  INNER JOIN patient ON person.person_id = patient.patient_id
+                                  WHERE person.gender = 'M' AND person.voided = 0 AND patient.voided = 0
+                                  AND person.person_id NOT IN (#{ user_person_ids.join(', ')})
+                                  AND DATE(person.date_created) BETWEEN ? AND ? ", params[:start_date].to_date, params[:end_date]]).map(&:person_id)
+      end
+
+      if params[:patient_category].include?("Non-Pregnant Women")
+
+      end
+
+      patients.each do |patient|
+        person = Person.find(patient) rescue next
+        next if person.patient.blank?
+
+        encounter_count = Encounter.find_by_sql("SELECT count(*) cc FROM encounter WHERE voided = 0 AND patient_id = #{patient_id}").last.cc rescue "N/A"
+        @patients << {
+            'patient_id' => person.person_id,
+            'name' => person.name,
+            'gender' => person.gender,
+            'date' => Date.today,
+            'dob' => (((person.birthdate_estimated.to_i == 1) ? "~ #{person.birthdate.to_date.strftime("%d-%b-%Y")}" : "#{person.birthdate.to_date.strftime("%d-%b-%Y")}") rescue "N/A"),
+            'npid' => (person.patient.national_id rescue "N/A"),
+            'encounters' => encounter_count
+        }
+      end
+
+      render :layout => "report" and return
+    end
+  end
+
 
   private
   def format_date(date)
