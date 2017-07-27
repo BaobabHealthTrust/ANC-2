@@ -54,11 +54,7 @@
 
     #tt_page_month_of_birth .options {
         height: 570px;
-    }
-
-    #tt_page_month_of_birth .options li {
-        font-size: 30px;
-    }
+    } 
 
     .tt_controls_home_village #space, #apostrophe {
         display: inline;
@@ -158,11 +154,6 @@
         font-size: 1.5em;
         margin: 2px;
         -moz-user-select: none;
-    }
-
-    #tt_page_month_of_birth .inputFrameClass {
-        height: 24em !important;
-        margin-top: 10%;
     }
 
 </style>
@@ -459,21 +450,25 @@
 
     <%= text_field_tag "person[birth_year]", nil, {:helpText => 'Year of Birth', :field_type => 'number', :absoluteMin => "1890", :min => "1940", :absoluteMax => Date.today.year, :tt_pageStyleClass => "Numeric NumbersOnly", :tt_onLoad => 'seen(tstCurrentPage);', :validationJS => "setDOB();"} %>
 
-    <%= select_tag "person[birth_month]", month_name_options, {
-            :helpText => 'Month of Birth',
-            :condition => '$("person_birth_year").value.toLowerCase() != "unknown"',
-            :validationJS => "validateDOB();",
-            :tt_onLoad => "selectAll = false; createSingleSelectControl(''); showSummary('year')",
-            :validationMessage => 'Please enter a valid date'} %>
+<%= select_tag "person[birth_month]",  month_name_options, 
+	{:helpText => 'Month of Birth',
+    :condition => '$("person_birth_year").value.toLowerCase() != "unknown"',
+    :validationJS => "validateDOB();",
+    :tt_onLoad => "selectAll = false;  showSummary('year')",
+    :tt_pageStyleClass => "longSelectList NoKeyboard",
+    :validationMessage => 'Please enter a valid date'}%>
+
 
     <%= text_field_tag "person[age_estimate]", nil, {:helpText => 'Age Estimate', :absoluteMin => 1, :absoluteMax => age_limit, :field_type => 'number', :condition => '$("person_birth_year").value == "Unknown"', :tt_onLoad => "$('nextButton').style.display = 'block';", :tt_pageStyleClass => "Numeric NumbersOnly"} %>
 
-    <%= text_field_tag "person[birth_day]", nil,
-                       :field_type => 'number',
-                       :helpText => 'Birth Day',
-                       :condition => '($("person_birth_year").value != "Unknown") && ($("person_birth_month").value != "Unknown")',
-                       :tt_onLoad => "getDayOfMonthPicker($('person_birth_year').value, $('person_birth_month').value); showSummary('day'); showNext();",
-                       :validationJS => "validateDOB()", :validationMessage => 'Please enter a valid date' %>
+<%= text_field_tag "person[birth_day]",  nil,
+    :field_type => 'number',
+    :helpText => 'Birth Day',
+    :condition => '($("person_birth_year").value != "Unknown") && ($("person_birth_month").value != "Unknown")',
+    :tt_onLoad => "getDayOfMonthPicker($('person_birth_year').value, $('person_birth_month').value); showSummary('day'); showNext();" ,
+    :validationJS => "validateDOB()",
+    :validationMessage => 'Please enter a valid date'%>
+
 
     <%= select_tag("person[citizenship]",
                    options_for_select([" ", "Malawian", "Other"], params[:citizenship]),
