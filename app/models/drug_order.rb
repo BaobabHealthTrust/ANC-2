@@ -117,7 +117,7 @@ class DrugOrder < ActiveRecord::Base
         :units => units,
         :equivalent_daily_dose => equivalent_daily_dose)
       drug_order.order_id = order.id                
-      drug_order.save!
+      drug_order.save! rescue nil
     end             
     drug_order     
   end
