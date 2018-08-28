@@ -198,9 +198,45 @@ class EncountersController < ApplicationController
       return [lmp[0]["lmp_date"], weeks]
   end
 
-  def new
+  def patients_on_hiv_program
 
+       p_identifiers = []
+       p_ids = []
+       on_program = false
+       PatientProgram.find(:all, 
+                          :joins => "INNER JOIN patient_state s ON patient_program.patient_program_id = s.patient_program_id INNER JOIN obs ON obs.person_id = patient_program.patient_id INNER JOIN patient_identifier pid ON patient_program.patient_id =  pid.patient_id", 
+                          :conditions => ["patient_program.voided = 0 AND s.voided = 0 AND program_id = 1 AND obs.voided = 0 AND obs.concept_id = 7754 AND value_coded = 1065"], 
+                          :group => "identifier", 
+                          :select => "pid.identifier,patient_program.patient_id,date_enrolled").each do | value |
+
+                            p_identifiers <<  value.identifer rescue nil
+       end
+
+       PatientProgram.find(:all, 
+                          :joins => "INNER JOIN patient_state s ON patient_program.patient_program_id = s.patient_program_id INNER JOIN obs ON obs.person_id = patient_program.patient_id INNER JOIN patient_identifier pid ON patient_program.patient_id =  pid.patient_id", 
+                          :conditions => ["patient_program.voided = 0 AND s.voided = 0 AND program_id = 1 AND obs.voided = 0 AND obs.concept_id = 7754 AND value_coded = 1065"], 
+                          :group => "identifier", 
+                          :select => "pid.identifier,patient_program.patient_id,date_enrolled").each do | value |
+
+                            p_ids <<  value.patient_id
+       end
+
+       if p_identifiers.include? @patient.patient_id
+          on_program = true
+       end
+
+       if p_ids.include? @patient.patient_id
+          on_program = true
+       end         
+
+       return on_hiv_program     
+  end
+
+  def new
+    
     @weeks = 0
+    
+    #raise @on_hiv_program.inspect
 
     d = (session[:datetime].to_date rescue Date.today)
     t = Time.now
@@ -323,6 +359,9 @@ class EncountersController < ApplicationController
 
       end
     end
+    
+    @on_hiv_program = patients_on_hiv_program rescue nil
+    #raise @on_hiv_program.inspect
 
     if next_task(@patient) == "/patients/current_pregnancy/?patient_id=#{@patient.id}" && @names.include?("CURRENT PREGNANCY")
       redirect_to "/patients/hiv_status/?patient_id=#{@patient.id}" and return

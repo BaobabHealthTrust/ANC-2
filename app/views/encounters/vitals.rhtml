@@ -485,8 +485,8 @@
     var bp = (sb || "?") + "/" + (db || "?");
     
     if(alreadyNoted == false){
-
-      if(sb > 140 || db > 90) {
+      if(sb > 140 && db > 90) {
+        console.log('checking position of code again...' +  db);
         
         showMessage('Client is at risk of pre-eclampsia. Please refer her for Urine Protein Test.',false,false);
         alreadyNoted = true;

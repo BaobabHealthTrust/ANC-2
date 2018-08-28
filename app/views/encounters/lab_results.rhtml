@@ -439,7 +439,7 @@ function remoteARTStatus(){
         
   //-->
 </script>
-
+ 
 <% form_tag :controller => "encounters", :action => "create" do |f| %>
   <%= hidden_field_tag "encounter[encounter_type_name]", "LAB RESULTS" %>
   <%= hidden_field_tag "encounter[patient_id]", @patient.id %>
