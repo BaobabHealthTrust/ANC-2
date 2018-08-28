@@ -208,11 +208,12 @@
       gotoPage(tstCurrentPage + 1);
     }
     
-    var complication = (sb > 180) || (db > 110) ?
+    var complication = patientComplication(sb,db);
+    /*var complication = (sb > 180) || (db > 110) ?
       "Emergency Care Needed" : ((sb >= 160 && sb <= 180) || (db >= 100 && db <= 110) ?
       "Hypertension Stage 2" : ((sb >= 140 && sb <= 159) || (db >= 90 && db <= 99)?
       "Hypertension Stage 1" : ((sb >= 120 && sb <= 139) || (db >= 80 && db <= 89) ?
-      "Prehypertension" : "")));
+      "Prehypertension" : ""))); */
  
     var txt = "<div style='color:red;width:100%;text-align:center;' id='bpFlag'><i style='float=right;align:center;'>" + complication + "</i></div>";
       
@@ -495,7 +496,7 @@
     
     $("bp").innerHTML = txt;
        
-    timedEvent = setTimeout('_foo()', 500);
+    timedEvent = setTimeout('_foo()', 100);
   }
 
   function weightLossPercent(currentWeight){
@@ -629,7 +630,7 @@
         :tt_pageStyleClass => "KeyboardNumeric NumbersWithUnknown" } % -->
 
       <%= touch_text_field_tag "SYSTOLIC BLOOD PRESSURE", @patient, nil,{
-        :id => "systolic_bp",
+        :id => "systolic_blood_pressure",
         :field_type => "number",
         :tt_onLoad =>  "_foo(); updateSBPValues();",
         :tt_onUnLoad => "parsedConceptName = ''; clearTimeout(timedEvent); clearInterval(sbpInterval);",
@@ -651,7 +652,7 @@
         :validationRule => "^([0-9]+)|Unknown$",
         :validationMessage => "You must enter numbers only (for example 157)",
         :tt_pageStyleClass => "Keyboard Numeric  NumbersWithUnknown",
-        :condition => "__$('systolic_bp').value !== 'Unknown';"
+        :condition => "__$('systolic_blood_pressure').value !== 'Unknown';"
       } %>
 
     <% end %>
