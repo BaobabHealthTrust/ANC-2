@@ -2,8 +2,9 @@ class EncountersController < ApplicationController
   before_filter :find_patient, :except => [:void, :probe_lmp]
 
   def create
-     sanitize_params
-    raise params.inspect
+
+    sanitize_params
+    
     @patient = Patient.find(params[:encounter][:patient_id])
     #raise params[:observations].to_yaml
     if params[:void_encounter_id]
@@ -601,12 +602,15 @@ class EncountersController < ApplicationController
   end
 
   def sanitize_params
+
      # this is a quick fix to the problem. A deeper analysis of the code would eventually reveal the exact source of the bug,
      # which later could help in  crating a subtantial solution.
      # Bug: the code is mixing up the systolic blood pressure reading with diastolic blood pressure readings in the vitals.rhtml view
      # 2018-08-28
-     params.delete :concept
 
+     params[:concept].delete "systolic blood pressure"
+     params[:concept].delete "Diastolic blood pressure"
+   
   end
   
 end
