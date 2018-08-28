@@ -608,8 +608,8 @@ class EncountersController < ApplicationController
      # Bug: the code is mixing up the systolic blood pressure reading with diastolic blood pressure readings in the vitals.rhtml view
      # 2018-08-28
 
-     params[:concept].delete "systolic blood pressure"
-     params[:concept].delete "Diastolic blood pressure"
+     params[:concept].delete "systolic blood pressure" rescue nil
+     params[:concept].delete "Diastolic blood pressure" rescue nil
    
   end
   
