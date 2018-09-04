@@ -1,0 +1,175 @@
+<html>
+<head>
+  <title>Report</title>
+
+  <style>
+    table{
+        width: 94%;
+        margin: auto;
+    }
+
+    .table2 td{
+        padding: 5px;
+        border: 1px dotted #f8f8ff;
+        color: darkslategrey;
+        font-size: 0.9em;
+        line-height: 1.65;
+    }
+
+    .table1 td{
+        padding: 2px;
+        border-top: 1px solid gray;
+        border-right: 1px solid gray;
+        color: darkslategrey;
+        line-height: 1.65;
+    }
+    .headers{
+        background: #d3d3d3;
+        font-weight: bold;
+        border-right: 1px solid gray !important;
+        border-top: 1px solid gray !important;
+        border-bottom: 1px solid gray !important;
+    }
+</style>
+</head>
+
+<body>
+<div>
+  <div>
+<table  class="table1" style="width: 100%; -moz-user-select: none;margin-bottom: 10px;">
+  <tr>
+
+        <th style="font-size: 1.5em; color: #eee; background-color: #999; padding: 5px;">
+          ANC C<span style="font-size: 0.8em">LINIC</span> -
+          F<span style="font-size: 0.8em">ACILITY</span> P<span style="font-size: 0.8em">EPFAR</span>
+          R<span style="font-size: 0.8em">EPORT</span>
+        </th>
+
+  </tr>
+
+  <tr>
+    <td style="border: 1px solid #999;">
+      <table width="100%" cellspacing="0" cellpadding="5">
+        <tr>
+          <td style="width: 25%; font-weight: bold;border-left: 1px solid gray;">
+            ANC Site Name
+          </td>
+          <td colspan="3" style=" font-style: italic;">
+            <%= @facility %>&nbsp;
+          </td>
+        </tr>
+        <tr>
+
+          <td style="width: 25%; font-weight: bold;border-left: 1px solid gray;">
+            Start Date:
+          </td>
+          <td style="font-style: italic;">
+            <%= @start_date.to_date.strftime("%B, %Y") rescue "" %>&nbsp;
+          </td>
+          <td style="width: 25%; font-weight: bold;" align="right">
+            End Date:
+          </td>
+          <td style="font-style: italic;">
+            <%= @end_date.to_date.strftime("%B, %Y") rescue "" %>&nbsp;
+          </td>
+        </tr>
+
+      </table>
+  </td>
+</tr>
+</table>
+  </div>
+
+  <div style="height: 70vh;overflow: auto;">
+<table class="table2" cellpadding="0" cellspacing="0" style="margin-top: 0px;border: 1px solid darkslategray;">
+      <tr>
+        <td style="border-right: 1px solid ;width: 15px;text-align: center;"class="headers">#</td>
+        <td class="headers">District</td>
+        <td class='headers'>Site</td>
+        <td class='headers'>Month</td>
+        <td class='headers'>Year</td>
+        <td class='headers'>ANC Indicator</td>
+        <td class='headers'>Age Category</td>
+        <td class='headers'>Value</td>
+      </tr>
+
+    <%
+       i = 1
+       @dates.sort.each do |date|%>
+       <% @indicators.sort.each do |indicator|%>
+          <% @age_groups.each do |age_group|%>
+
+      <tr class="header">
+        <td style="border-right: 1px solid darkslategray;border-bottom: 1px solid darkslategray; background: #f8f8ff;width: 15px;text-align: center;"><%= i%></td>
+        <td ><span id="district_<%=i%>"><%=@district%></span></td>
+        <td ><span id="facility_<%=i%>"><%= @facility%></span></td>
+        <td ><span id="month_<%=i%>"><%= date.strftime("%B")%></span></td>
+        <td ><span id="year_<%=i%>"><%= date.strftime("%Y") %></span></td>
+        <td ><span id="indicator_<%=i%>"><%= indicator%></span></td>
+        <td ><span id="age_<%=i%>"><%= age_group%></span></td>
+        <td ><span id="<%=i%>">Loading...</span></td>
+      </tr>
+          <%
+             i += 1
+             end  %>
+      <% end %>
+     <% end %>
+</table>
+    </div>
+</div>
+
+<!--div id="nav" style="background:rgb(51,51,51) !important;">
+  <button class="green" style="width: 140px; float: right; margin: 10px;" onclick="window.location = '/'">
+          <span>
+            Finish
+          </span>
+  </button>
+
+  <button class="blue" style="width: 190px; float: right; margin: 10px;"  onmousedown="javascript:printPDF();">
+          <span>
+            Export to CSV
+          </span>
+  </button>
+
+  <button class="red" style="width: 110px; float: left; margin-top: 10px;" onclick="window.location = '/'">
+          <span>
+            Cancel
+          </span>
+  </button>
+</div-->
+
+</body>
+<script>
+  function fetchData(){
+    <%
+      i = 1
+      @dates.sort.each do |date|%>
+        <% @indicators.sort.each do |indicator|%>
+          <% @age_groups.each do |age_group|%>
+            var district  = $("#district_<%=i%>").text();
+            var site      = $("#facility_<%=i%>").text();
+            var month     = $("#month_<%=i%>").text();
+            var year      = $("#year_<%=i%>").text();
+            var indicator = $("#indicator_<%=i%>").text();
+            var age       = $("#age_<%=i%>").text();
+
+            var url = "/reports/disagregated_report/";
+            url = url + "?district="+district+"&age="+age;
+            url = url + "&facility="+site+"&year="+year;
+            url = url + "&month="+month+"&indicator="+indicator;
+
+            $.getJSON(url,function(data){
+              $("#<%=i%>").text(data)
+              console.log(<%=i%>)
+            });
+
+          <%
+             i += 1
+             end  %>
+      <% end %>
+     <% end %>
+
+  }
+  fetchData()
+</script>
+</html>
