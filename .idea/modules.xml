@@ -3,7 +3,10 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/ANC-2.iml" filepath="$PROJECT_DIR$/.idea/ANC-2.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/ANC-2.iml" filepath="$PROJECT_DIR$/.idea/ANC-2.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../OPD/.idea/OPD.iml" filepath="$PROJECT_DIR$/../OPD/.idea/OPD.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../EBRS_EDRS/ebrs_dc/.idea/ebrs_dc.iml" filepath="$PROJECT_DIR$/../EBRS_EDRS/ebrs_dc/.idea/ebrs_dc.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../ebrs_facility_2.0/.idea/ebrs_facility_2.0.iml" filepath="$PROJECT_DIR$/../ebrs_facility_2.0/.idea/ebrs_facility_2.0.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../iBlis_reception/.idea/iBlis_reception.iml" filepath="$PROJECT_DIR$/../iBlis_reception/.idea/iBlis_reception.iml" />
     </modules>
   </component>
 </project>

@@ -645,7 +645,6 @@ class ReportsController < ApplicationController
         render :layout => 'report'
   end
 
-
   def decompose
     #raise params.inspect
     @facility = Location.current_health_center.name rescue ''
@@ -933,5 +932,7 @@ class ReportsController < ApplicationController
       
       return results
     end
+
+
 
 end

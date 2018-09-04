@@ -1,0 +1,81 @@
+<style>
+.main-table {
+  display: table;
+  width: 100%;
+}
+
+.main-table-row {
+  display: table-row;
+}
+
+.main-table-cell {
+  display: table-cell;
+  border-style: solid;
+  border-width: 1px;
+  padding: 5px;
+}
+
+.left {
+  width: 60%;
+}
+
+.right {
+  text-align: center;
+}
+
+#nextButton { display: none; }
+</style>
+
+<script>
+function loadData() {
+  var t = document.createElement('div');
+  t.setAttribute('class','main-table');
+
+  <%(@results || []).each do |r|%>
+  var tr = document.createElement('div');
+  tr.setAttribute('class','main-table-row');
+  t.appendChild(tr);
+
+  var td = document.createElement('div');
+  td.setAttribute('class','main-table-cell left');
+  td.innerHTML = "<b>Name:</b> <%= r[:given_name]%> <%= r[:middle_name]%> <%= r[:family_name]%> (<%= r[:gender]%>) <%= r[:birthdate]%>";
+  td.innerHTML += "<br /><b>Home district:</b> <%= r[:home_district]%> <b>Home TA:</b> <%= r[:home_ta]%> <b>Home village:</b> <%= r[:home_village]%>";
+  tr.appendChild(td);
+
+  <%if r[:person_id].blank? %>
+    reassign_link = "/dde/reassign_npid?doc_id=<%= r[:doc_id]%>";
+  <%else%>
+    reassign_link = "/dde/reassign_local_client_npid?person_id=<%= r[:person_id] %>";
+  <%end%>
+
+  var td = document.createElement('div');
+  td.setAttribute('class','main-table-cell right');
+  btn = document.createElement('button');
+  btn.setAttribute('onmousedown', "reassignID('" + reassign_link + "');");
+  btn.innerHTML = "<span>Re-assign ID</span>";
+  td.appendChild(btn);
+
+  tr.appendChild(td);
+  t.appendChild(tr);
+  <%end%>
+
+  inputFrame = document.getElementById('inputFrame' + tstCurrentPage);
+  inputFrame.appendChild(t);
+
+}
+
+function reassignID(link){
+  document.location = link;
+}
+
+</script>
+
+<form action="/dde/dde_duplicate" method="post">
+
+    <%= text_field_tag :summary, nil, { 
+      :tt_onLoad => "loadData();__$('keyboard').style.display = 'none';", 
+      :optional => "true",
+      :helpText => "Duplicate identifier (#{params[:npid]})", 
+      :tt_pageStyleClass => "NoControls" } %>
+
+</form>

@@ -1,0 +1,53 @@
+
+
+<style>
+    table {
+        width: 98%;
+    }
+    td, th{
+            width: 40%;
+            border: 1px solid gray;
+            padding: 3px;
+            font-size: 1.1em;
+            padding-left: 15px;
+    }
+
+    img{
+        padding: 0px;
+        margin:0px;
+    }
+</style>
+<div style="width: 94%; font-size: 1.2em; font-weight: bold; background: #d3d3d3;padding: 8px;">
+  Patient Name: <%= @patient_name %> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Encounter Type:  <%= @name %>
+</div>
+<div style="height: 86.5vh;overflow-y: auto;width: 100%;overflow-x: hidden">
+<table>
+  <% @data.each do |data|
+    %>
+      <tr style="background:#f8f8ff;">
+        <th><%=data['encounter_datetime'].to_date.strftime("%d-%b-%Y")%></th>
+        <th>
+          <div style="float:right;padding:0px;height: 46px;">
+            <%= img_button_submit_to "/patients/void/#{params[:patient_id]}",
+                                     "/images/cancel_flat_red.png", {:confirm => 'Are you sure you want to void?'},
+                                     {:encounter_id => data['encounter_id'],
+                                      :patient_id => params[:patient_id],
+                                      :encounter_type => params[:encounter_type],
+                                      :date => params[:date],
+                                      :return_uri => "source"} -%>
+          </div>
+        </th>
+      </tr>
+      <%
+    data.each{|k, v|
+     next if ['encounter_id', 'encounter_datetime'].include?(k)
+  %>
+    <tr>
+        <td><%= k%></td>
+        <td><%= v%></td>
+
+    </tr>
+  <% }
+     end %>
+</table>
+    </div>

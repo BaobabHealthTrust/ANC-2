@@ -1,0 +1,50 @@
+<%= javascript_include_tag "barcode" %>
+<style type="text/css">
+  #inputFrame1 {
+    border: 1px solid #fff !important;
+    margin-left: 25px;
+    background: #fff;
+    width: 96.5%;
+    border-radius: 10px;
+    padding: 5px;
+}
+</style>
+<script type="text/javascript">
+// setTimeout(function(){
+// 	var searchButton = document.getElementById('search_by_name');
+// 	searchButton.onclick = function(){
+// 	  <% if params['patient_id'].blank? %>
+// 	  	window.location = "/people/search?gender=Female"
+// 	  	console.log('here');
+// 	  <% else %>
+// 	    window.location = "/people/search?gender=Male&patient_id=<%=params[:patient_id]%>"
+// 	  <%end%>
+// 	}
+// },500);
+ 
+</script>
+
+<form id='barcodeForm' action="/people/search">
+  <% request_father_details = CoreService.get_global_property_value("father_details") rescue 'false' %>
+  <% if request_father_details == true && !params[:patient_id].blank? %>
+  <%= select_tag("partner",
+    options_for_select([" ", "Yes", "No"], params[:partner]),
+    :id => 'details_of_father_available',
+    :helpText =>"Father Details Available",
+    :tt_onLoad => "showNext(); seen(tstCurrentPage); "
+  ) %>
+  <%= hidden_field_tag "patient", params[:patient_id], 
+  {:condition => "__$('details_of_father_available').value == 'Yes'"} %>
+
+  <%end%>
+  <%= text_field_tag :identifier, '', 
+  {:id => 'barcode', 
+   :class => 'touchscreenTextInput', 
+   :style => 'position:absolute',
+   :helpText => 'Scan person barcode:',
+   :tt_onLoad => 'addSearchByNameButton();',
+   :condition => "__$('details_of_father_available').value == 'Yes'"
+  } %>
+  <!-- button class="button navButton" id="newSearch" onmousedown="newSearch();"><span>New search</span></button -->
+  <%= submit_tag "Submit", :style => "display:none" %>
+</form>

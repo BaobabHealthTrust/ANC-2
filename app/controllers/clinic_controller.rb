@@ -1,6 +1,12 @@
 class ClinicController < GenericClinicController
   def index
     
+    if !session[:data_cleaning].blank?
+      session.delete(:data_cleaning)
+      session.delete(:cleaning_params) if session[:cleaning_params].present?
+      session.delete(:datetime) if session[:datetime].present? 
+      session.delete(:from_encounters) if session[:from_encounters].present?
+    end
     @facility = Location.current_health_center.name rescue ''
 
     @location = Location.find(session[:location_id]).name rescue ""
@@ -11,15 +17,16 @@ class ClinicController < GenericClinicController
 
     @roles = User.find(current_user.user_id).user_roles.collect{|r| r.role} rescue []
 
-    # raise session.to_yaml
-
     render :layout => 'dynamic-dashboard'
   end
 
   def reports
     @reports = [#['/reports/select/','Booking Cohort Report'],
-      ['/reports/report_limits', 'Monthly Report'] ,
-      ['/reports/select?type=anc_cohort', 'Booking Cohort Report']]
+      ['/reports/select?type=anc_monthly', 'Monthly Report'] ,
+      ['/reports/select_dates', 'View Appointments'] ,
+      ['/reports/select?type=anc_cohort', 'Booking Cohort Report'],
+      ['/reports/select2?type=pepfar_report', 'ANC PEPFAR Report']
+    ]
 
     # render :template => 'clinic/reports', :layout => 'clinic'
     render :layout => false
@@ -105,8 +112,91 @@ class ClinicController < GenericClinicController
     render :layout => "menu"
   end
 
+	def no_minors
+    render :layout => "menu"
+  end
+
   def data_cleaning_tools
     render :layout => false
   end
-  
+
+  def configurations
+    render :layout => false
+  end
+
+  def enable_dde2
+    @dde_status = GlobalProperty.find_by_property('dde.status').property_value rescue ""
+    @dde_status = 'Yes' if @dde_status.match(/ON/i)
+    @dde_status = 'No' if @dde_status.match(/OFF/i)
+
+    if request.post?
+      dde_status = params[:create_from_dde2]
+      if dde_status.squish.downcase == 'yes'
+        dde_status = 'ON'
+      else
+        dde_status = 'OFF'
+      end
+
+      global_property_dde_status = GlobalProperty.find_by_property('dde.status') || GlobalProperty.new()
+      global_property_dde_status.property = 'dde.status'
+      global_property_dde_status.property_value = dde_status
+      global_property_dde_status.save
+
+      if (dde_status == 'ON') #Do this part only when DDE is activated
+        global_property_dde_address = GlobalProperty.find_by_property('dde.address') || GlobalProperty.new()
+        global_property_dde_address.property = 'dde.address'
+        global_property_dde_address.property_value = params[:dde_server_ip]
+        global_property_dde_address.save
+
+        global_property_dde_port = GlobalProperty.find_by_property('dde.port') || GlobalProperty.new()
+        global_property_dde_port.property = 'dde.port'
+        global_property_dde_port.property_value = params[:dde_server_port]
+        global_property_dde_port.save
+
+        data = {:username => params[:dde_server_username], :password => params[:dde_server_password]}
+        dde_token = DDE2Service.dde_login(data)
+        
+        if dde_token.blank?
+          flash[:notice] = "Failed to authorize user. Check your username and password"
+          redirect_to("/clinic/enable_dde2") and return
+        else
+          session[:dde_token] = dde_token
+          redirect_to("/clinic/dde_add_user") and return
+        end
+      end
+    end
+
+    render :layout => "application"
+  end
+
+  def dde_add_user
+    if request.post?
+      data = {
+        "username" => params[:username],
+        "password" => params[:password],
+        "location" => params[:location]
+      }
+      
+      dde_status = DDE2Service.add_dde_user(data, session[:dde_token])
+      unless dde_status.to_i == 200
+        flash[:notice] = "Failed to create user"
+        redirect_to("/clinic/dde_add_user") and return
+      end
+      redirect_to("/clinic") and return
+    end
+    render :layout => "application"
+  end
+
+  def get_dde_locations
+    dde_locations = DDE2Service.dde_locations(session[:dde_token], params[:name])
+    li_elements = "<li></li>"
+    dde_locations.each do |location|
+      doc_id = location["doc_id"]
+      location_name = location["name"]
+      li_elements += "<li value='#{doc_id}'>#{location_name}</li>"
+    end
+    li_elements += "<li></li>"
+    render :text => li_elements and return
+  end
+
 end

@@ -21,7 +21,7 @@
   <%= hidden_field_tag("programs[][states][][state]", "Admitted") %>
 
   <%= touch_select_tag "Reason for exiting care", @patient,
-    options_for_select(["", "Already on ART at another facility",  "Not willing"]),
+    options_for_select(["", "Already on ART at another facility",  "PMTCT to be done in another room", "Not willing"]),
     {:id => "why_not",
     :helptext => "Reason for Not Starting ART"
   } %>

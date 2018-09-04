@@ -15,8 +15,8 @@ bart2:
 development:
   adapter: mysql
   database: anc_development
-  username: root
-  password: password
+  username: fchiyenda
+  password: batman_83
   host: localhost
 
 test: &TEST

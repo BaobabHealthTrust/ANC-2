@@ -185,7 +185,7 @@ function createMultipleSelectControl(){
 function createSingleSelectControl(options_div){
 
     var options = tstFormElements[tstCurrentPage].options;
-    
+
     if (typeof(options) == undefined){
 
         options = tstFormElements[tstCurrentPage].children;

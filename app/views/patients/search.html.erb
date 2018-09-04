@@ -1,0 +1,380 @@
+<script language="javascript" type="text/javascript" src="/javascripts/jquery.js"></script>
+
+<style>
+
+    .record th {
+        padding: 8px;
+        background-color: #666;
+        color: #eee;
+        text-align: center !important;
+    }
+    
+    .record .duplicate {
+     
+       background-color: #181818;
+       
+    }
+
+    .record td {
+        padding: 8px;
+    }
+    #comment_popoup{
+    width: 45%;
+    height: 50%;
+    position: absolute;;
+    left: 25%;
+    top: 20%;
+    background: #eeeeef;
+    border-radius: 2%;
+    color: black;
+    box-shadow: 5px 5px 2px #888888;
+    visibility: hidden;
+  }
+  #title{
+    width: 98%;
+    margin:auto;
+    margin-top: 0.8%;
+    background: #345d8c;
+    font-size: 150%;
+    font-weight: bold;
+    color: #FFFFFF;
+    text-align: center;
+    padding-top: 2%;
+    padding-bottom: 2%;
+    border-top-right-radius: 7%;
+    border-top-left-radius: 7%;
+    border-bottom: 2px solid #d9d8d7;
+  }
+  #comment{
+    width: 98%;
+    height: 58%;
+    overflow-y: scroll;
+  }
+  #comment ul{
+    list-style-type: none;
+  }
+  #comment ul > li{
+    display: block;
+    background: #FFFFFF;
+    width:92%;
+    padding: 1.5%;
+    margin: auto;
+    margin-top: 0%;
+    border-radius: 3%;
+    padding-left: 2.5%;
+    border: 1px solid #d9d8d7;
+  }
+  #button{
+    width: 100%;
+    text-align: center;
+    padding: 5%;
+  }
+
+   .blue-back{
+       background: lightblue;
+   }
+
+</style>
+<table style="width: 100%">
+  <tr>
+    <td style="width: 47%" valign="top">
+        <div id="stats" style="width: 100%; overflow: auto; border-bottom: 1px solid #ccc;">
+            <table class="record" style="width: 100%; margin-top: 10px;" border="1">
+                <tr>
+                  <th colspan='2' style="width: 100%; background-color: #6281a7" class="duplicate">
+                    Primary Record <i style="color: #999"></i>
+                  </th>
+                </tr>
+
+                <tr>
+                    <td align="left" style="font-size: 12px; font-weight: bold;" style="font-size: 12px; font-weight: bold;">
+                    First Name
+                    </td>
+                    <td align="left">
+                 <%= params["first_name"] %>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td align="left" style="font-size: 12px; font-weight: bold;">
+                    Last Name
+                  </td>
+                  <td align="left">
+                  <%= params["last_name"] %>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td align="left" style="font-size: 12px; font-weight: bold;">
+                    Date of Birth
+                  </td>
+                  <td align="left">
+                  <%= params["birthdate"] %>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td align="left" style="font-size: 12px; font-weight: bold;">
+                    National Id
+                  </td>
+                  <td align="left">
+                  <%= params["identifier"] %>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td align="left" style="font-size: 12px; font-weight: bold;">
+                    Gender
+                  </td>
+                  <td align="left">
+                  <% if params["gender"] == 'F' %>
+                      <%= "Female" %>
+                  <% else %>
+                      <%= "Male" %>
+                  <% end %>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td align="left" style="font-size: 12px; font-weight: bold;">
+                    Home District
+                  </td>
+                  <td align="left">
+                    <%= params["home_district"] %>
+                  </td>
+                </tr>
+
+            </table>
+        </div>
+    </td>
+
+    <td style="width: 53%" valign="top">
+      <div id="stats2" style="width: 100%; height: 80vh; overflow: auto; border-bottom: 1px solid #ccc;">
+        <% (@duplicates || []).each_with_index do |duplicate, i|%>
+            <table id="<%= duplicate['patient_id']%>" class="record" onclick="togglePatient(this)" patient_id="<%= duplicate['patient_id']%>" style="width: 100%; margin-top: 10px;" border="1">
+              <tr>
+                <th colspan='2' style="width: 100%; background-color: #6281a7" class="duplicate">
+                  Possible duplicate <%= i+1%> <i style="color: #999"></i>
+                </th>
+              </tr>
+
+              <tr>
+                <td align="left" style="font-size: 12px; font-weight: bold;" style="font-size: 12px; font-weight: bold;">
+                  First Name
+                </td>
+                <td align="left">
+                  <%= duplicate["first_name"] %>
+                </td>
+              </tr>
+
+              <tr>
+                <td align="left" style="font-size: 12px; font-weight: bold;">
+                  Last Name
+                </td>
+                <td align="left">
+                  <%= duplicate["last_name"] %>
+                </td>
+              </tr>
+
+              <tr>
+                <td align="left" style="font-size: 12px; font-weight: bold;">
+                  Date of Birth
+                </td>
+                <td align="left">
+                  <%= duplicate["birthdate"] %>
+                </td>
+              </tr>
+
+              <tr>
+                <td align="left" style="font-size: 12px; font-weight: bold;">
+                  National Id
+                </td>
+                <td align="left">
+                  <%= duplicate["identifier"] %>
+                </td>
+              </tr>
+
+              <tr>
+                <td align="left" style="font-size: 12px; font-weight: bold;">
+                  Gender
+                </td>
+                <td align="left">
+                  <% if duplicate["gender"] == 'F' %>
+                      <%= "Female" %>
+                  <% else %>
+                      <%= "Male" %>
+                  <% end %>
+                </td>
+              </tr>
+
+              <tr>
+                <td align="left" style="font-size: 12px; font-weight: bold;">
+                  Home District
+                </td>
+                <td align="left">
+                  <%= duplicate["home_district"] %>
+                </td>
+              </tr>
+
+            </table>
+        <% end %>
+      </div>
+    </td>
+  </tr>
+</table>
+
+
+<div id="comment_popoup">
+   <div id="title">Record Comments</div>
+   <div id="comment">
+     
+   </div>
+   <div id="button"><button class="blue" onclick="dismissComment()">Ok</button></div>
+</div>
+
+
+<div id="footer" style="">
+    <div id="buttons" class="buttonsDiv" style="bottom:0px">
+    <button id="finishButton" class="button navButton green" onclick="window.location = '/patients/merge_menu' ">
+        <span>Finish</span>
+    </button>
+    <button onclick="window.location = '/clinic';" class="button navButton red"
+      id="cancelButton" style="position: absolute; z-index: 100; margin-top: 10px;"><span>Cancel</span>
+    </button>
+
+    <button id="mergeButton" class="button navButton gray" onclick="mergePatients()">
+        <span>Merge Selected</span>
+    </button>
+    <div id="tt_extraButtons"/>
+    </div>
+</div>
+
+<script>
+
+  function togglePatient(table){
+
+      if (table.className.match("blue-back")){
+          //de-select
+          table.className = "record";
+      }else {
+            //select
+          table.className = "record blue-back";
+      }
+
+      var selected = document.getElementsByClassName("blue-back");
+
+      if(selected.length > 0){
+
+        document.getElementById("mergeButton").className = "button navButton blue";
+      }else{
+
+          document.getElementById("mergeButton").className = "button navButton gray";
+      }
+  }
+
+  function mergePatients(){
+
+      var selected = [];
+      var secondaryPatients = [];
+
+      if(document.getElementById("mergeButton").className.match("blue")){
+
+          selected = document.getElementsByClassName("blue-back");
+
+          for (var i = 0; i < selected.length; i ++){
+
+              secondaryPatients.push(selected[i].getAttribute("patient_id"))
+          }
+      }else{
+
+          showMessage("Select duplicate patients to proceed");
+          return;
+      }
+
+      var patientId = <%= params[:patient_id] %>;
+
+      confirmYesNo("Are you sure you want to merge selected patient(s)?", function(){
+          hideConfirmation();
+          jQuery.ajax({
+              type: 'post',
+              url: "/patients/merge",
+              data: {
+                  'primary_patient' : patientId,
+                  'secondary_patients[]' : secondaryPatients
+              },
+              success: function(res){
+                  console.log(res);
+                  if(res == 'Ok') {
+                      for(var i = 0; i < secondaryPatients.length; i++) {
+                          jQuery("#" + secondaryPatients[i]).remove();
+
+                          var selected = document.getElementsByClassName("blue-back");
+
+                          if(selected.length > 0){
+
+                              document.getElementById("mergeButton").className = "button navButton blue";
+                          }else{
+
+                              document.getElementById("mergeButton").className = "button navButton gray";
+                          }
+
+                          showMessage("Patients merged Successfully!");
+                      }
+                  }else{
+                      showMessage("Something went wrong!");
+                  }
+              },
+              error: function(){
+                  showMessage("Something went wrong!");
+              }
+          })
+
+      }, function(){
+          hideConfirmation();
+      });
+
+  }
+
+  var confirmation = null;
+  var confirmationTimeout = null;
+
+  function confirmYesNo(message, yes, no) {
+      hideConfirmation();
+      if (confirmation == null) {
+          confirmation = document.createElement("div");
+          confirmation.setAttribute('id', 'confirmation');
+          confirmation.setAttribute('style', 'display:none');
+          confirmation.style.left = "50%";
+          confirmation.style.marginLeft = "-225px";
+          confirmation.style.width = "450px";
+          confirmation.style.position = "absolute";
+          confirmation.style.top = "30%";
+          confirmation.style.fontSize = "2em";
+          confirmation.style.textAlign = "center";
+          confirmation.style.backgroundColor = "tomato";
+          confirmation.style.zIndex = "999";
+
+          document.body.appendChild(confirmation);
+      }
+      confirmation.innerHTML = ''+
+              '<div class="confirmation" style="left:50%; margin-left: -225px; width: 450px; ' +
+              'position: absolute; top: 30%; font-size: 2em; text-align: center; ' +
+              'background-color: tomato; z-index: 999;">'+ message+ '<div>'+
+              '<button id="yes"><span>Yes</span></button>'+
+              '<button id="no"><span>No</span></button></div>'+
+              '</div>';
+      setTimeout(function() {
+          jQuery("#yes").mousedown(yes);
+          jQuery("#no").mousedown(no);
+      }, 300);
+
+      confirmation.setAttribute('style', 'display:block');
+      confirmationTimeout = window.setTimeout("hideConfirmation()", 20000);
+  }
+
+  function hideConfirmation(){
+      if (confirmation != null) confirmation.setAttribute('style', 'display:none');
+      if (confirmationTimeout != null) window.clearTimeout(confirmationTimeout);
+  }
+
+</script>

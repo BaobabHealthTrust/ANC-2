@@ -1,6 +1,3 @@
-<script type="text/javascript" language="javascript" src="/javascripts/multi_column_controls.js" defer  ></script>
-
-
 <style>
   .tt_controls_month_of_birth #keyboard{
     display: none;
@@ -13,11 +10,6 @@
   }
   #tt_page_occupation .options{
     height:17em;
-  }
-
-  #tt_page_month_of_birth .inputFrameClass{
-    height:  24em !important;
-    margin-top: 10%;
   }
 
   li.highlighted {
@@ -301,25 +293,17 @@
       :tt_onLoad => 'seen(tstCurrentPage);' }  %>
 
     <%= select_tag "person[birth_month]", options_for_select(@month_names),
-      {:helpText => "Month of Birth<span class='helper'> Demographics (Edit)</span>",
-      :tt_onLoad => "selectAll = false; createSingleSelectControl(''); showSummary('year')",
-      :tt_pageStyleClass => "NoKeyboard",
-      :condition => '$("person_birth_year").value.toLowerCase() != "unknown"'}%>
-
-    <%= text_field_tag "person[age_estimate]", nil,
-      {:helpText => "Age Estimate<span class='helper'> Demographics (Edit)</span>",
-      :absoluteMin => 1,
-      :absoluteMax => age_limit,
-      :field_type => 'number',
-      :condition => '$("person_birth_year").value == "Unknown"',
-      :tt_pageStyleClass => "Numeric NumbersOnly"} %>
+      {   :helpText => "Month of Birth<span class='helper'> Demographics (Edit)</span>",
+          :tt_onLoad => "selectAll = false;",
+          :tt_pageStyleClass => "NoKeyboard"
+      }%>
 
     <%= text_field_tag "person[birth_day]",  nil,
       :field_type => 'number',
       :helpText => "Birth Day<span class='helper'> Demographics (Edit)</span>", :absoluteMin => 1,
       :absoluteMax => 31,
-      :condition => '($("person_birth_year").value != "Unknown") && ($("person_birth_month").value != "Unknown")',
-      :tt_onLoad => "getDayOfMonthPicker($('person_birth_year').value,$('person_birth_month').value); showSummary('day')"%>
+      :tt_pageStyleClass => "Numeric NumbersOnly"
+    %>
 
   <%when 'city_village'%>
 
@@ -436,6 +420,7 @@
       {:id => "race",
       :helptext => "Specify nationality<span class='helper'> Demographics (Edit)</span>",
       :allowFreeText => true,
+      :tt_BeforeUnLoad => "$('person_attributes_citizenship').value = $('race').value",
       :ajaxURL => "/people/static_nationalities?&search_string=",
       :condition => '($("person_attributes_citizenship").value != "Malawian")' } %>
 

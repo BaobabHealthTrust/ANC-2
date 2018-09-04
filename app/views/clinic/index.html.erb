@@ -26,17 +26,23 @@
   <div id="facility"><%= @facility rescue "" %></div>
   <div id="location"><%= @location rescue "" %></div>
 
-  <div id="date"><%= @date rescue "" %></div>
+  <div id="date"><%= @date.to_date.strftime("%Y-%m-%d") rescue "" %></div>
   <div id="user"><%= @user.name  rescue (@user.class.to_s  == "String" ? @user : nil) %></div>
 
   <select id="links">
     <option value='/logout' link='/logout'>Logout</option>
-    <option value='/people/search?gender=Female' link='/people/search' ttSize="290px">Find / Register Patient</option>
+    <%if create_from_dde
+      find_or_reg_patient = '/dde/search?gender=Female'
+    else
+      find_or_reg_patient = '/people/search?gender=Female'
+    end%>
+    <option value="<%= find_or_reg_patient%>" link="<%=find_or_reg_patient%>" ttSize="290px">Find / Register Patient</option>
+    <!-- option value='/people/search' link='/people/search' ttSize="290px">Find / Register Patient</option -->
     <option value='<%= ((session[:datetime].to_date.strftime("%Y-%m-%d") rescue Date.today.strftime("%Y-%m-%d") != 
           Date.today.strftime("%Y-%m-%d")) ?
                 "/people/reset_datetime" : "/people/set_datetime") %>'  ttSize="100px">
-              <%= ((session[:datetime].to_date.strftime("%Y-%m-%d") rescue Date.today.strftime("%Y-%m-%d") !=
-            Date.today.strftime("%Y-%m-%d")) ? "Reset Date" : "Set Date") %></option>
+              <%= ((session[:datetime].to_date.strftime("%d/%m/%Y") rescue Date.today.strftime("%d/%m/%Y") !=
+            Date.today.strftime("%d/%m/%Y")) ? "Reset Date" : "Set Date") %></option>
   </select>
 
 </div>
@@ -46,4 +52,7 @@
   tt_cancel_destination = "/logout";
   tt_register_destination = "/people/search";
   //-->
+<%if create_from_dde %>
+  tt_cancel_show = '/dde/search_by_name_and_gender'; //?identifier=' + this.value;
+<%end%>
 </script>

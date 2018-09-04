@@ -8,6 +8,33 @@
     var selectedSigns = "";
     var values_hash = {};
 
+    function selectNone(){
+    
+    if (__$("chkSelectAll") && __$("lblSelectAll")){
+
+      __$("lblSelectAll").innerHTML = "None";
+
+      __$("chkSelectAll").onclick = function(){
+        if ( __$("chkSelectAll").src.match(/unticked/))
+        __$("chkSelectAll").src = __$("chkSelectAll").src.replace(/unticked/, "ticked");
+        checkAll();
+        __$("touchscreenInput" + tstCurrentPage).setAttribute("optional", "true")
+        setTimeout("gotoNextPage()", 200);
+      }
+      __$("lblSelectAll").onclick = function(){
+
+        if ( __$("chkSelectAll").src.match(/unticked/))
+          __$("chkSelectAll").src = __$("chkSelectAll").src.replace(/unticked/, "ticked");
+        checkAll();
+        __$("touchscreenInput" + tstCurrentPage).setAttribute("optional", "true");
+
+        setTimeout("gotoNextPage()", 200);
+      }
+    }
+
+    setTimeout("selectNone()", 50);
+  }
+
     function calculateBP(pos) {
         var bp;
 
@@ -81,7 +108,7 @@
     var breech = 0;
     function ajaxify(cat, selected) {
 
-        if (selected == "Ball") {
+        if (selected == "Ball" || selected == "Nil palpable") {
 
             __$("frame2").style.display = "none";
             __$("htext2").style.display = "none";
@@ -102,7 +129,7 @@
                 data = ["", "Right Occipito Anterior", "Left Occipito Anterior", "Unknown"].join('|')
                 handleResultData(cat, data, "cephalic_presentation");
             }
-            else if (selected.toLowerCase() == 'ball') {
+            else if (selected.toLowerCase() == 'ball' || selected.toLowerCase() == 'nil palpable') {
 
                 data = "";
                 handleResultData(cat, data, "");
@@ -153,7 +180,7 @@
 
                 __$("position").value = "";
 
-                if(__$("presentation").value.toLowerCase().trim() == "ball"){
+                if(__$("presentation").value.toLowerCase().trim() == "ball" || __$("presentation").value.toLowerCase().trim() == "nil palpable"){
 
                     __$("breech_presentation").value = "";
                     __$("cephalic_presentation").value = "";
@@ -489,6 +516,12 @@
         sc4.id = "sc4";
         view4.appendChild(sc4);
     }
+    function addAbsoluteMax(id){
+        abMax = __$(id).value;
+        jQuery('#touchscreenInput'+ tstCurrentPage).attr("absoluteMax", abMax);
+    }
+
+    setTimeout("selectNone()", 50);
     //-->
 </script>
 
@@ -502,6 +535,10 @@
         margin-left: 18px;
     }
 
+    #viewport {
+      height: 100%;
+    }
+
 </style>
 
 <% form_tag :controller => "encounters", :action => "create" do |f| %>
@@ -512,69 +549,122 @@
     <%= hidden_field_tag "encounter[encounter_datetime]", session_date %>
     <%= hidden_field_tag "encounter[provider_id]", session[:user_id] %>
 
+    <%= touch_select_tag "", @patient,
+      options_for_select([["", ""], ["Yes", "Yes"], ["No", "No"]]),
+      {:id => "scan_question",
+       :tt_onLoad => "",
+       :helptext => "Ultrasound Scan Results Available <span class='helper'> ANC Examination</span>"}
+       %>
 
-    <%= touch_select_tag "Multiple gestation", @patient, options_for_select([["", ""],
-                                                                             ["No", "No"], ["Twins", "Twins"],
-                                                                             ["Triplets", "Triplets"],
-                                                                             ["Quadruplet", "Quadruplet"],
-                                                                             ["Unknown", "Unknown"]]),
-                         {:id => "multiple_gestation",
-                          :helptext => "Is This a Multiple Pregnancy?  <span class='helper'> ANC Examination</span>" } %>
+    <%= touch_select_tag "Multiple gestation", @patient, 
+    options_for_select([["", ""],["One", "One"], ["Two", "Two"],["Three", "Three"],
+                         ["Four", "Four"],["Unknown", "Unknown"]]),
+     {:id => "multiple_gestation",
+      :helptext => "Number of fetuses <span class='helper'> ANC Examination</span>",
+      :condition => "__$('scan_question').value == 'Yes'" 
+     } %>
 
-
-    <%= touch_numeric_tag "FUNDUS", @patient, nil,
-                          {:id => "enter_fundal_height",
-                           :helptext => "Fundus (weeks) <span class='helper'> ANC Examination</span>",
-                           :tt_pageStyleClass => "NumbersWithUnknown",
-                           :min => "#{(!@anc_patient.fundus_by_lmp(session_date).nil? ? (@anc_patient.fundus_by_lmp(session_date).to_i - 2) : 42)}",
-                           :max => "#{(!@anc_patient.fundus_by_lmp(session_date).nil? ? (@anc_patient.fundus_by_lmp(session_date).to_i + 2) : 42)}",
-                           :absoluteMax => 45,
-                           :tt_onLoad => "buildConceptsHash(); setTimeout(function(){ readableMessage()}, 50)"
-                          }, session_date %>
+     <!--%= touch_numeric_tag "Fetal Weight", @patient, nil,
+     {:id => "fetal_weight",
+      :helptext => "Estimated Fetal Weight (grams) <span class='helper'> ANC Examination</span>",
+      :tt_pageStyleClass => "NumbersWithUnknown",
+      :min => "#{(!@anc_patient.fundus_by_lmp(session_date).nil? ? (@anc_patient.fundus_by_lmp(session_date).to_i - 2) : 42)}",
+      :max => #{(!@anc_patient.fundus_by_lmp(session_date).nil? ? (@anc_patient.fundus_by_lmp(session_date).to_i + 2) : 42)}",
+      :absoluteMax => 3685,
+      :tt_onLoad => "buildConceptsHash(); setTimeout(function(){ readableMessage()}, 50)",
+      :condition => "__$('scan_question').value == 'Yes'"
+     } % -->
 
 
     <%#= touch_hidden_tag "Cephalic", @patient, nil, {:id => "cephalic"}%>
     <%#= touch_hidden_tag "breech", @patient, nil, {:id => "breech"}%>
     <%#= touch_hidden_tag "Position", @patient, nil, {:id => "bed_net"}%>
 
-    <% @presentation = ["", "Cephalic", "Breech", "Ball"] %>
+    <%= touch_select_tag "LIQUOR", @patient, 
+    options_for_select([["", ""],["Adequate", "Adequate"], 
+        ["Not Adequate", "Not Adequate"],["Unknown", "Unknown"]]),
+     {:id => "liquor",
+      :helptext => "Liquor <span class='helper'> ANC Examination</span>",
+      :condition => "__$('scan_question').value == 'Yes'" 
+     } %>
+
+     <%= touch_select_tag "lie", @patient, options_for_select([["", ""],
+        ["Longitudinal", "Longitudinal"], 
+        ["Transverse", "Transverse"],["Unknown", "Unknown"]]),
+     {:id => "lie",
+      :helptext => "Lie <span class='helper'> ANC Examination</span>",
+      :condition => "__$('scan_question').value == 'Yes'" 
+     } %>
+
+     <%= touch_select_tag "Fetal heart movement seen", @patient, options_for_select([["", ""],["Yes", "Yes"], ["No", "No"]]),
+     {:id => "fetal_heart_movement_seen",
+      :helptext => "Fetal heart movement seen <span class='helper'> ANC Examination</span>"     ,
+      :condition => "__$('scan_question').value == 'Yes'"  
+     } %>
+
+     <% @presentation = ["", "Cephalic", "Breech", "Ball", "Nil palpable"] %>
 
     <%= touch_select_tag "PRESENTATION", @patient, options_for_select(@presentation),
-                         {:id => "presentation",
-                          :helptext => "Presentation <span class='helper'> ANC Examination</span>",
-                          :tt_onLoad => "__$('nextButton').onmousedown = function(){verifyFields()}; ajaxifyInput();",
-                          :tt_BeforeUnLoad => "",
-                          :optional => true,
-                          :tt_pageStyleClass => "NoKeyboard"}, session_date %>
+     {:id => "presentation",
+      :helptext => "Presentation <span class='helper'> ANC Examination</span>",
+      :tt_onLoad => "__$('nextButton').onmousedown = function(){verifyFields()}; ajaxifyInput();",
+      :tt_BeforeUnLoad => "",
+      :optional => true,
+      :tt_pageStyleClass => "NoKeyboard"
+     }, session_date %>
 
     <% @cephalic = ["", "Right Occipito Anterior", "Left Occipito Anterior", "Unknown"] %>
 
     <%= touch_select_tag "Cephalic", @patient, options_for_select(@cephalic),
-                         {:id => "cephalic_presentation",
-                          :helptext => "Cephalic Type <span class='helper'> ANC Examination</span>",
-                          :tt_onLoad => "",
-                          :allowFreeText => true,
-                          :tt_pageStyleClass => "NoKeyboard",
-                          :condition => false}, session_date %>
+     {:id => "cephalic_presentation",
+      :helptext => "Cephalic Type <span class='helper'> ANC Examination</span>",
+      :tt_onLoad => "",
+      :allowFreeText => true,
+      :tt_pageStyleClass => "NoKeyboard",
+      :condition => false
+     }, session_date %>
 
     <% @breech = ["", "Right Sacro Anterior", "Left Sacro Anterior", "Unknown"] %>
 
     <%= touch_select_tag "Breech", @patient, options_for_select(@breech),
-                         {:id => "breech_presentation",
-                          :helptext => "Breech Type <span class='helper'> ANC Examination</span>",
-                          :tt_pageStyleClass => "NoKeyboard",
-                          :allowFreeText => true,
-                          :tt_onLoad => "",
-                          :condition => false}, session_date %>
+     {:id => "breech_presentation",
+      :helptext => "Breech Type <span class='helper'> ANC Examination</span>",
+      :tt_pageStyleClass => "NoKeyboard",
+      :allowFreeText => true,
+      :tt_onLoad => "",
+      :condition => false
+     }, session_date %>
 
     <% @position = ["", "Vertex", "Oblique", "Transverse", "Breech", "Face", "Shoulder"] %>
 
     <%= touch_select_tag "POSITION", @patient, options_for_select(@position),
-                         {:id => "position",
-                          :helptext => "Position <span class='helper'> ANC Examination</span>",
-                          :tt_pageStyleClass => "NoKeyboard",
-                          :tt_onLoad => "",
-                          :condition => false}, session_date %>
+      {:id => "position",
+       :helptext => "Position <span class='helper'> ANC Examination</span>",
+       :tt_pageStyleClass => "NoKeyboard",
+       :tt_onLoad => "",
+       :condition => false
+      }, session_date %>
+
+    <%= touch_numeric_tag "FUNDUS", @patient, nil,
+     {:id => "enter_fundal_height",
+      :helptext => "Fundus (weeks) <span class='helper'> ANC Examination</span>",
+      :tt_pageStyleClass => "NumbersWithUnknown",
+      :min => "#{(!@anc_patient.fundus_by_lmp(session_date).nil? ? (@anc_patient.fundus_by_lmp(session_date).to_i - 2) : 42)}",
+      :max => "#{(!@anc_patient.fundus_by_lmp(session_date).nil? ? (@anc_patient.fundus_by_lmp(session_date).to_i + 2) : 42)}",
+      :absoluteMax => 45,
+      :tt_onLoad => "buildConceptsHash(); setTimeout(function(){ readableMessage()}, 50)"
+     }, session_date %>
+
+    <%= touch_select_tag "FETAL HEART BEAT", @patient,
+        options_for_select([["", ""], 
+          ["Heard", "Heard"], 
+          ["Not heard", "Not heard"]]),
+        {
+          :id => "enter_fetal_heart",
+          :condition => "__$('presentation').value != 'Ball' || __$('presentation').value != 'Nil palpable'",
+          :tt_onLoad => "",
+          :helptext => "Fetal Heart Beat <span class='helper'> ANC Examination</span>"
+        }, session_date %>
 
 
     <%#--------------------------------------------------------%>
@@ -648,26 +738,54 @@
                           :allowFreeText => true,
                           :tt_pageStyleClass => "NoKeyboard"} %>
 
-    <%= touch_select_tag "FETAL HEART BEAT", @patient,
-                         options_for_select([["", ""], ["Heard", "Heard"], ["Not heard", "Not heard"],
-                                             ["Fetal Movement Felt (FMF)", "Fetal Movement Felt (FMF)"]]),
-                         {:id => "enter_fetal_heart",
-                          :condition => "__$('presentation').value != 'Ball'",
+    <%= touch_select_tag "FETAL MOVEMENT HEARD", @patient,
+                         options_for_select([["", ""], ["Yes", "Yes"], ["No", "No"]]),
+                         {:id => "enter_fetal_movemement",
+                          :condition => "",
                           :tt_onLoad => "",
-                          :helptext => "Fetal Heart Beat <span class='helper'> ANC Examination</span>"}, session_date %>
+                          :helptext => "Fetal Movement Heard<span class='helper'> ANC Examination</span>"}, session_date %>
+
+    <%= touch_select_tag "FETAL MOVEMENT FELT", @patient,
+                         options_for_select([["", ""], ["Yes", "Yes"], ["No", "No"]]),
+                         {:id => "fetal_movemement_felt",
+                          :condition => "__$('presentation').value != 'Ball' || __$('presentation').value != 'Nil palpable'",
+                          :tt_onLoad => "",
+                          :helptext => "Fetal Movement Felt <span class='helper'> ANC Examination</span>"}, session_date %>
+
+    <!-- %= touch_date_tag "LAST FETAL MOVEMENT FELT", @patient, nil,
+                       {:id => "last_fmf",
+                        :helptext => "Last Fetal Movement Felt  <span class='helper'> Current Pregnancy</span>",
+                        :tt_onLoad => "timedEvent = setTimeout('calculateEDOD()', 100); initializeDate()",
+                        :tt_onUnLoad => 'clearTimeout(timedEvent);',
+                        :condition => "__$('enter_fetal_movemement').value == 'No'",
+                        :tt_pageStyleClass => "exclude",
+                        :min => ((session[:datetime] || Date.today).to_date - 42.week),
+                        :absoluteMin => ((session[:datetime] || Date.today).to_date - 45.week),
+                        :absoluteMax => ((session[:datetime] || Date.today).to_date - 1.day)
+                       }% -->
+
+    <%= touch_numeric_tag "LAST FETAL MOVEMENT FELT", @patient, nil,
+                          {:id => "last_fmf",
+                           :helptext => "Last Fetal Movement Felt (weeks) <span class='helper'> ANC Examination</span>",
+                           :tt_onUnLoad => "clearTimeout(timedEvent);",
+                           :tt_pageStyleClass => "NumbersWithUnknown",
+                           :tt_onLoad => "buildConceptsHash(); setTimeout(function(){ readableMessage()}, 50); addAbsoluteMax('enter_fundal_height');",
+                           :condition => "__$('fetal_movemement_felt').value !== '' || __$('fetal_movemement_felt').value !== 'Unknown'"
+                          }, session_date %>
 
     <%#--------------------------------------------------------%>
 
     <%# This options hash allows us to define our options in one place %>
     <% options = {
-            :helpText => "Signs/Symptoms <span class='helper'> ANC Examination</span>",
+            :helpText => "Diagnosis <span class='helper'> ANC Examination</span>",
             :allowFreeText => 'true',
-            :ajaxURL => "/encounters/anc_diagnoses?include_none=true&search_string=",
             :textCase => "upper",
-            :tt_onLoad => "changeUnknownToNone();"
+            :multiple => true,
+            :selectAll => "selectAll",
+            :tt_onLoad => "changeUnknownToNone(); console.log(__$('last_fmf').value)"
     } %>
 
-    <label for='observations[][value_coded_or_text]'>Signs/Symptoms</label>
+    <label for='observations[][value_coded_or_text_multiple]'>Sicccgns/Symptoms</label>
     <%#= text_field_tag("observations[][value_coded_or_text]", nil, options) %>
     <%#= hidden_field_tag("observations[][value_text]", nil) %>
     <%#= hidden_field_tag("observations[][concept_name]", "DIAGNOSIS", options) %>
@@ -684,21 +802,22 @@
                 $('nextButton').innerHTML = '<span>Next</span>';
             setTimeout(updateNextFinish, 500)
         }
+        function addWeeks(){
+          v = __$("touchscreenInput" + tstCurrentPage).value;
+          if (parseInt(v) == 1){
+            __$("touchscreenInput" + tstCurrentPage).value += ' week';
+            __$('last_fmf').value = __$("touchscreenInput" + tstCurrentPage).value
+            console.log(__$("touchscreenInput" + tstCurrentPage).value);
+            console.log(__$('last_fmf').value);
+          }else{
+            __$('last_fmf').value = __$("touchscreenInput" + tstCurrentPage).value+' weeks';
+          }
+        }
     </script>
 
-    <% sup = ["", "st", "nd", "rd", "th", "th", "th"] %>
+   
 
-    <% 5.times do |counter| %>
-        <% options[:condition] = "check != '' && check != 'none' && tstFormElements[#{counter + 3}].value != '' && tstFormElements[#{counter + 3}].value.toLowerCase().trim() != 'none'" if counter > 0 %>
-        <% options[:optional] = 'true' if counter > 0 %>
-        <% counter += 1 %>
-        <% options[:helpText] = (counter > 1 ? "#{counter}<sup>#{sup[counter]}</sup>  <span class='helper'> ANC Examination</span>" : " <span class='helper'> ANC Examination</span>") + "Danger Sign/Symptom" %>
-        <% options[:position] = "#{counter + 1}" %>
-        <% options[:id] = "sign#{counter}" %>
-
-        <% options[:tt_onLoad] = (counter > 1 ? "__$('Unknown').style.display = 'none'; " : "") + "changeUnknownToNone();" %>
-
-        <%
+        <!-- %
            if (counter) < 5
              options[:tt_onUnLoad] = "check = __$('touchscreenInput' + tstCurrentPage).value.toLowerCase(); selectedSigns += (selectedSigns.length > 0 ? '&' : '') + 'v#{counter}=' + __$('touchscreenInput' + " +
                      "tstCurrentPage).value.replace(/\\s/g, '+'); if(__$('touchscreenInput' + tstCurrentPage).getAttribute('position')){" +
@@ -708,14 +827,23 @@
            else
              options[:tt_onUnLoad] = ""
            end
-        %>
+        % -->
+    <% @diagnosis_concept = [
+            ["Malaria", "Malaria"],
+            ["Anaemia", "Anaemia"], 
+            ["Pre-eclampsia", "Pre-eclampsia"], 
+            ["Vaginal Bleeding", "Vaginal Bleeding"], 
+            ["Early rupture of membranes", "Early rupture of membranes"], 
+            ["Premature Labour", "Premature Labour"],
+            ["Pneumonia", "Pneumonia"], 
+            ["Extensive Warts", "Extensive Warts"]]
+      %>
 
-        <%= text_field_tag("observations[][value_coded_or_text]", nil, options) %>
         <%= hidden_field_tag("observations[][value_text]", nil) %>
         <%= hidden_field_tag("observations[][concept_name]", "DIAGNOSIS", options) %>
+        <%= select_tag("observations[][value_coded_or_text_multiple]", options_for_select(@diagnosis_concept), options) %>
         <%= hidden_field_tag("observations[][patient_id]", @patient.id) %>
         <%= hidden_field_tag("observations[][obs_datetime]", session_date) %>
-    <% end %>
 
     <%= submit_tag 'Finish' %>
 <% end %>

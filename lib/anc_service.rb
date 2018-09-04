@@ -127,6 +127,8 @@ module ANCService
       aborted = abortion_check_encounter.observations.collect{|ob| ob.answer_string.downcase.strip if ob.concept_id == ConceptName.find_by_name("PREGNANCY ABORTED").concept_id}.compact.include?("yes")  rescue false
 
       date_aborted = abortion_check_encounter.observations.find_by_concept_id(ConceptName.find_by_name("DATE OF SURGERY").concept_id).answer_string rescue nil
+      recent_lmp = self.find_by_sql(["SELECT * from obs WHERE person_id = #{self.patient.id} AND concept_id =
+                          (SELECT concept_id FROM concept_name WHERE name = 'DATE OF LAST MENSTRUAL PERIOD' LIMIT 1)"]).last.answer_string.squish.to_date rescue nil
 
       self.patient.encounters.find(:all, :order => ["encounter_datetime DESC"]).each{|e|
         if e.name == "CURRENT PREGNANCY" && !pregnancies[e.encounter_datetime.strftime("%Y-%m-%d")]
@@ -163,11 +165,16 @@ module ANCService
         end
       }
 
+      if recent_lmp.present?
+        current_range["START"] = recent_lmp
+        current_range["END"] = current_range["START"] + 9.months
+      end
+
       if (abortion_check_encounter.present? && aborted && date_aborted.present? && current_range["START"].to_date < date_aborted.to_date rescue false)
 
     		current_range["START"] = date_aborted.to_date + 10.days
     		current_range["END"] = current_range["START"] + 9.months
-    	end
+      end
 
       current_range["END"] = current_range["START"] + 7.day + 45.week unless ((current_range["START"]).to_date.blank? rescue true)
 
@@ -735,6 +742,7 @@ module ANCService
     end
 
     def examination_label(target_date = Date.today)
+      #raise target_date.inspect
       @patient = self.patient rescue nil
 
       syphil = {}
@@ -751,12 +759,19 @@ module ANCService
 
       @malaria = syphil["MALARIA TEST RESULT"].titleize rescue ""
 
+      @blood_group = syphil["BLOOD GROUP"] rescue ""
+
       @malaria_date = syphil["MALARIA TEST RESULT"].match(/not done/i)? "" : syphil["DATE OF LABORATORY TEST"] rescue nil
 
-      @hiv_test = (syphil["HIV STATUS"].downcase == "positive" ? "=" :
-          (syphil["HIV STATUS"].downcase == "negative" ? "-" : "")) rescue ""
+      hiv_test = syphil["HIV STATUS"].blank? ? syphil["PREVIOUS HIV TEST RESULTS"] : syphil["HIV STATUS"] 
 
-      @hiv_test_date = syphil["HIV STATUS"].match(/not done/i) ? "" : syphil["HIV TEST DATE"] rescue nil
+      @hiv_test = (hiv_test.downcase == "positive" ? "=" :
+          (hiv_test.downcase == "negative" ? "-" : "")) rescue ""
+
+      #@hiv_test_date = syphil["HIV STATUS"].match(/not done/i) ? "" : syphil["HIV TEST DATE"] rescue nil
+      
+      hiv_test_date = syphil["PREVIOUS HIV TEST RESULTS"].match(/not done/i) ? "" : syphil["PREVIOUS HIV TEST DATE"] rescue nil
+      @hiv_test_date = hiv_test_date.to_date.strftime("%Y-%m-%d") rescue ""
 
       hb = {}; pos = 1;
 
@@ -768,9 +783,9 @@ module ANCService
         }
       }
 
-      @hb1 = hb["HB TEST RESULT 1"] rescue nil
+      @hb = syphil['HB TEST RESULT'] + " g/dl" rescue nil
 
-      @hb1_date = hb["HB TEST RESULT DATE 1"] rescue nil
+      #@hb1_date = hb["HB TEST RESULT DATE 1"] rescue nil
 
       @hb2 = hb["HB TEST RESULT 2"] rescue nil
 
@@ -781,6 +796,8 @@ module ANCService
       @cd4_date = syphil['CD4 COUNT DATETIME'] rescue nil
 
       @height = current_height.to_i # rescue nil
+
+      @weight = current_weight.to_i
 
       @multiple = Observation.find(:last, :conditions => ["person_id = ? AND encounter_id IN (?) AND concept_id = ?",
           @patient.id, Encounter.find(:all, :conditions => ["encounter_type = ?",
@@ -797,16 +814,17 @@ module ANCService
       label.draw_line(180,160,250,1,0)
 
       label.draw_text("Height",28,76,0,2,1,1,false)
-      label.draw_text("Multiple Pregnancy",28,106,0,2,1,1,false)
+      label.draw_text("Weight",28,106,0,2,1,1,false)
 
       label.draw_text("Lab Results",28,131,0,1,1,2,false)
       label.draw_text("Date",190,140,0,2,1,1,false)
       label.draw_text("Result",325,140,0,2,1,1,false)
       label.draw_text("HIV",28,166,0,2,1,1,false)
       label.draw_text("Syphilis",28,196,0,2,1,1,false)
-      label.draw_text("Hb1",28,226,0,2,1,1,false)
-      label.draw_text("Hb2",28,256,0,2,1,1,false)
-      label.draw_text("Malaria",28,286,0,2,1,1,false)
+      label.draw_text("Hb",28,226,0,2,1,1,false)
+      #label.draw_text("Hb2",28,256,0,2,1,1,false)
+      label.draw_text("Malaria",28,256,0,2,1,1,false)
+      label.draw_text("Blood Group",28,286,0,2,1,1,false)
       label.draw_line(260,70,170,1,0)
       label.draw_line(260,70,1,60,0)
       label.draw_line(180,306,250,1,0)
@@ -826,20 +844,23 @@ module ANCService
       label.draw_line(180,280,250,1,0)
 
       label.draw_text(@height,270,76,0,2,1,1,false)
-      label.draw_text(@multiple,270,106,0,2,1,1,false)
+      label.draw_text(@weight,270,106,0,2,1,1,false)
       # label.draw_text(@who,270,136,0,2,1,1,false)
 
       label.draw_text(@hiv_test_date,188,166,0,2,1,1,false)
-      label.draw_text(@syphilis_date,188,196,0,2,1,1,false)
-      label.draw_text(@hb1_date,188,226,0,2,1,1,false)
-      label.draw_text(@hb2_date,188,256,0,2,1,1,false)
-      label.draw_text(@malaria_date,188,286,0,2,1,1,false)
+      label.draw_text(target_date,188,196,0,2,1,1,false)
+      label.draw_text(target_date,188,226,0,2,1,1,false)
+      label.draw_text(target_date,188,256,0,2,1,1,false)
+      label.draw_text(target_date,188,286,0,2,1,1,false)
+
 
       label.draw_text(@hiv_test,345,166,0,2,1,1,false)
       label.draw_text(@syphilis,345,196,0,2,1,1,false)
-      label.draw_text(@hb1,325,226,0,2,1,1,false)
-      label.draw_text(@hb2,325,256,0,2,1,1,false)
-      label.draw_text(@malaria,325,286,0,2,1,1,false)
+      label.draw_text(@hb,325,226,0,2,1,1,false)
+      #label.draw_text(@hb2,325,256,0,2,1,1,false)
+      label.draw_text(@malaria,325,256,0,2,1,1,false)
+      label.draw_text(@blood_group,325,286,0,2,1,1,false)
+      #label.draw_text(@malaria,188,226,0,2,1,1,false)
 
       label.print(1)
 
@@ -1145,7 +1166,7 @@ module ANCService
       label.draw_text("",28,138,0,2,1,1,false)
       label.draw_text("TTV",75,156,0,2,1,1,false)
 
-      label.draw_text("Signs/Symptoms",170,140,0,2,1,1,false)
+      label.draw_text("Diagnosis",170,140,0,2,1,1,false)
       label.draw_text("Medication/Outcome",370,140,0,2,1,1,false)
       label.draw_text("Next Vis.",600,140,0,2,1,1,false)
       label.draw_text("Date",622,158,0,2,1,1,false)
@@ -1320,6 +1341,10 @@ module ANCService
       end
 
       nationality
+    end
+
+    def country_of_residence
+      get_attribute("Country of Residence")
     end
 
     def age(today = Date.today)
@@ -1525,7 +1550,9 @@ module ANCService
                           INNER JOIN obs o ON o.encounter_id = e.encounter_id
                           WHERE e.encounter_type = (SELECT encounter_type_id FROM encounter_type WHERE name = 'LAB RESULTS' LIMIT 1)
                             AND e.voided = 0
-                            AND o.concept_id = (SELECT concept_id FROM concept_name WHERE name = 'HIV STATUS')
+                            AND (o.concept_id = (SELECT concept_id FROM concept_name WHERE name = 'HIV STATUS')
+                              OR o.concept_id = (SELECT concept_id FROM concept_name WHERE name = 'Previous HIV Test Results')
+                              )
                             AND e.patient_id = #{self.patient.patient_id}
                             ORDER BY o.obs_datetime DESC LIMIT 1
                   ").last.value.match(/Negative|Positive/i)[0] rescue "Unknown"
@@ -1564,6 +1591,20 @@ module ANCService
           o.answer_string.to_i if o.concept.concept_names.first.name.downcase == "reason for visit"
         }.compact
       }.flatten rescue []
+    end
+
+    def last_visit(session_date = Date.today)
+      last_lmp = self.patient.encounters.last(:joins => [:observations],
+                                              :conditions => ['encounter_type = ? AND obs.concept_id = ?',
+                                              EncounterType.find_by_name('Current pregnancy').id,
+                                              ConceptName.find_by_name('Last menstrual period').concept_id]
+      ).observations.collect { |o| o.value_datetime }.compact.last.to_date rescue nil
+
+      return 0 if last_lmp.blank?
+
+      day_diff = (session_date.to_date - last_lmp.to_date).to_i
+      number_of_months = day_diff.days/30.days
+      return number_of_months
     end
 
   end
@@ -1653,6 +1694,7 @@ module ANCService
 
     create_from_dde_server = CoreService.get_global_property_value('create.from.dde.server').to_s == "true" rescue false
     create_from_remote = CoreService.get_global_property_value('create.from.remote').to_s == "true" rescue false
+
 
     if create_from_dde_server
       dde_server = GlobalProperty.find_by_property("dde_server_ip").property_value rescue ""
@@ -1823,13 +1865,34 @@ module ANCService
   end
 
   def self.update_demographics(params)
-    person = Person.find(params['person_id'])
 
+    params['person']['attributes'] = {} if params['person']['attributes'].blank?
+    params['person']['addresses'] = {} if params['person']['addresses'].blank?
+
+    if params['person']['addresses']['state_province'] && District.find_by_name(params['person']['addresses']['state_province']).blank?
+      params['person']['attributes']['country_of_residence'] = params['person']['addresses']['state_province']
+      params['person']['addresses']['state_province'] = ''
+      params['person']['addresses']['city_village'] = ''
+    else
+
+    end
+
+    if !params['person']['attributes']['race'].blank?
+      params['person']['attributes']['citizenship'] = params['person']['attributes']['race']
+      params['person']['attributes']['race'] = nil
+
+      params['person']['addresses']['address2'] = ''
+      params['person']['addresses']['county_district'] = ''
+      params['person']['addresses']['neighborhood_cell'] = ''
+    end
+
+    person = Person.find(params['person_id'])
     if params.has_key?('person')
       params = params['person']
     end
 
     address_params = params["addresses"]
+
     names_params = params["names"]
     patient_params = params["patient"]
     person_attribute_params = params["attributes"]
@@ -1837,7 +1900,7 @@ module ANCService
     params_to_process = params.reject{|key,value| key.match(/addresses|patient|names|attributes/) }
     birthday_params = params_to_process.reject{|key,value| key.match(/gender/) }
 
-    person_params = params_to_process.reject{|key,value| key.match(/birth_|race|action|controller|cat|age_estimate/) }
+    person_params = params_to_process.reject{|key,value| key.match(/birth_|race|country_of_residence|action|controller|cat|age_estimate/) }
 
     if !birthday_params.empty?
 
@@ -1857,6 +1920,7 @@ module ANCService
 
     #update or add new person attribute
     person_attribute_params.each{|attribute_type_name, attribute|
+      next if attribute.blank?
       attribute_type = PersonAttributeType.find_by_name(attribute_type_name.humanize.titleize) || PersonAttributeType.find_by_name("Unknown id")
       #find if attribute already exists
       exists_person_attribute = PersonAttribute.find(:first, :conditions => ["person_id = ? AND person_attribute_type_id = ?", person.id, attribute_type.person_attribute_type_id]) rescue nil
@@ -1871,7 +1935,7 @@ module ANCService
     create_from_dde_server = CoreService.get_global_property_value('create.from.dde.server').to_s == "true" rescue false
     if create_from_dde_server
       patient_bean = PatientService.get_patient(person)
-      DDEService.update_demographics(patient_bean)
+      DDE2Service.update_demographics(patient_bean)
     end
 
   end

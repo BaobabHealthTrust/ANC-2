@@ -342,3 +342,7 @@ select {
     text-indent: 0.01px;
     text-overflow: '';
 }
+
+#messageBar {
+    left: 528.533px !important;
+}

@@ -63,7 +63,7 @@
         </td>
         <td style="border: 1px solid #000;" align="center"
             <%= (!@nutrition.nil? ? (@nutrition.titleize == "Malnourished" ? "class='selected'" : "") : "") %>>
-          &nbsp;<%= (!@nutrition.nil? ? @nutrition.titleize : "") %>&nbsp;
+          &nbsp;<%= (!@nutrition.nil? ? @nutrition.titleize : "N/A") %>&nbsp;
         </td>
       </tr>
       <tr>
@@ -74,14 +74,14 @@
           &nbsp;<%= (!@civil.nil? ? (@civil.titleize == "Other" ? @civil_other : @civil) : "") %>&nbsp;
         </td>
       </tr>
-      <tr>
+      <!--tr>
         <td style="padding-left: 10px;">
           Religion
         </td>
         <td style="border: 1px solid #000;" align="center">
-          &nbsp;<%= (!@religion.nil? ? (@religion.titleize == "Other" ? @religion_other : @religion.titleize) : "") %>&nbsp;
+          &nbsp;< %= (!@religion.nil? ? (@religion.titleize == "Other" ? @religion_other : @religion.titleize) : "") %>&nbsp;
         </td>
-      </tr>
+      </tr -->
     </table>
   </td>
 </tr>

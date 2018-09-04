@@ -1,0 +1,50 @@
+<script>
+    tt_cancel_destination = "/?active_tab=tab2";
+</script>
+
+<style>
+    #Unknown {
+        display: none;
+    }
+</style>
+<form action="/reports/list_appointments" method='post'>
+
+<%optionsString = []
+  optionsString << "January"
+  optionsString << "February"
+  optionsString << "March"
+  optionsString << "April"
+  optionsString << "May"
+  optionsString << "June"
+  optionsString << "July"
+  optionsString << "August"
+  optionsString << "September"
+  optionsString << "October"
+  optionsString << "November"
+  optionsString << "December"
+%>
+
+<%yearString = []
+  yearString << "2010"
+  yearString << "2011"
+  yearString << "2012"
+  yearString << "2013"
+  yearString << "2014"
+  yearString << "2015"
+  yearString << "2016"
+  yearString << "2017"
+  yearString << "2018"
+  yearString << "2019"
+  yearString << "2020"
+%>
+
+<%= touch_select_tag "year", '', options_for_select(yearString),
+        {:id => "year",
+         :helpText => "Select Year",
+         :tt_pageStyleClass => "NoKeyboard NoInput small"  } %>
+
+<%= touch_select_tag "month", '', options_for_select(optionsString),
+        {:id => "month",
+         :helpText => "Select Month",
+         :tt_pageStyleClass => "NoKeyboard NoInput small"  } %>
+</form>

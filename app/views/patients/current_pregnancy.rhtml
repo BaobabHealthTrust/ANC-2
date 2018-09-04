@@ -375,19 +375,28 @@
     :tt_pageStyleClass => "NumbersOnly"
   } %>
 
-  <%= touch_select_tag "Bed Net", @patient, options_for_select([["", ""],
-      ["Given Today", "Given Today"],
-      ["Given during previous ANC visit for current pregnancy", "Given during previous ANC visit for current pregnancy"],
-      ["Not given today or during current pregnancy", "Not given today or during current pregnancy"]
+  <%= select_tag "Bed Net Available", options_for_select([["", ""],
+      ["Yes", "Yes"],
+      ["No", "No"]
     ]),
-    {:id => "bed_net",
-    :helptext => "Bed Net  <span class='helper'> Current Pregnancy</span>" } %>
+    {
+      :id => "bed_net_available",
+      :helptext => "Mosquito net in good condition available for own use <span class='helper'> Current Pregnancy</span>" } %>
 
-  <%= touch_date_tag "Date received", @patient, nil,
+  <%= touch_select_tag "Bed Net", @patient, options_for_select([["", ""],
+      ["Yes", "Yes"],
+      ["No", "No"]
+    ]),
+    {
+      :id => "bed_net_given",
+      :helptext => "Bed Net Given Today <span class='helper'> Current Pregnancy</span>",
+      :condition => "__$('bed_net_available').value == 'No'" } %>
+
+  <!-- %= touch_date_tag "Date received", @patient, nil,
   {:id => "bed_date",
-  :helptext => "Date Bet Net Given",
-  :condition => "__$('bed_net').value == 'Yes'"
-  } %>
+    :helptext => "Date Bet Net Given",
+    :condition => "__$('bed_net_1').value == 'Yes'"
+  } %-->
 
   <% options = {
     :id => "tt_status_value",

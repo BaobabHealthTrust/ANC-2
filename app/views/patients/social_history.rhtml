@@ -9,7 +9,7 @@
     //alert("here")
     //array format [url, input_id, helpText]
     var options = ["Yes", "No"].join('|')
-    var marital_status = ["Single","Married","Engaged","Separated","Divorced","Widowed","Other"].join('|')
+    var marital_status = ["Never Married","Married","Separated","Divorced"].join('|')
     var religion =["None", "Christian", "Jehova witness", "Muslim", "Hindu", "African traditional", "Other"].join("|");
     var arr = [[options, "smoker"],
       [options, "alcohol"],
@@ -58,6 +58,8 @@
           cell.setAttribute("class", "cell");
           cell.style.background = "white";
 
+          console.log(__$(arr[n][1]));
+
           var helpText = __$(arr[n][1]).getAttribute("helpText");
           var heada = document.createElement("div");
           heada.style.height = "40px";
@@ -69,7 +71,11 @@
           heada.style.fontSize = "28px";
           heada.style.marginLeft = "5px";
           heada.style.marginRight = "5px";
-          cell.appendChild(heada);
+          if (__$(arr[n][1]).getAttribute("helpText") != "Religion")
+          {
+            cell.appendChild(heada);
+          }
+          
 
           if(c != 1){
             cell.style.borderLeft = "1px solid";
@@ -99,6 +105,8 @@
       __$("2_2").style.borderTop = "hidden";
       __$("1_2").style.borderBottom = "1px solid";
       __$("2_1").style.borderRight = "1px solid";
+
+      __$("2_2").style.display = "none";
 
     }
   }
@@ -166,12 +174,13 @@
   function addValidationInterval(){
 
     var interval = setInterval(function(){
-      var arr = ["smoker", "alcohol", "civil_status", "religion"];
+      var arr = ["smoker", "alcohol", "civil_status"]//, "religion"];
      
       var check = 0
       for (var i = 0; i < arr.length; i ++){
 
         var node = __$(arr[i]);
+        //console.log(node);
         if (node != undefined && node.value == ""){
           check = check + 1;
         }
@@ -220,7 +229,7 @@
 
   <%= touch_select_tag "Patient currently smokes", @patient, options_for_select([["", ""], ["Yes", "Yes"], ["No", "No"]]),
     {:id => "smoker", :tt_requireNextClick => false,
-    :helptext => "Does patient smoke?",
+    :helptext => "Currently Smoking ",
     :condition => 'false',
     :tt_onLoad => "" } %>
   <%= touch_select_tag "Patient currently consumes alcohol", @patient, options_for_select([["", ""], ["Yes", "Yes"], ["No", "No"]]),
@@ -228,13 +237,13 @@
     :tt_requireNextClick => false,
     :tt_onLoad => "",
     :condition => 'false',
-    :helptext => "Does patient take alcohol?" } %>
+    :helptext => "Currently Taking alcohol" } %>
   <%#= touch_select_tag "Nutrition status", @patient, options_for_select([["", ""], ["Good", "Good"], ["Malnourished", "Malnourished"], ["Obese", "Obese"]]),
   {:id => "nutrition",
   :helptext => "Nutrition status" } %>
 
   <%= touch_select_tag "Civil status", @patient,
-    options_for_select([["", ""], ["Single", "Single"], ["Engaged", "Engaged"],
+    options_for_select([["", ""], ["Never Married", "Never Married"], ["Engaged", "Engaged"],
       ["Married", "Married"], ["Separated", "Separated"], ["Divorced", "Divorced"],
       ["Widowed", "Widowed"], ["Other", "Other"]]),
     {:id => "civil_status",
@@ -254,7 +263,7 @@
   <%= touch_text_field_tag "", @patient, nil,
     {:id => "social_information",
     :helptext => "Social Information <span class='helper'>Social History</span>",
-    :tt_onLoad => "jQuery('#backButton, #clearButton').css('display', 'none'); loadSplitSelections(); validationInterval = addValidationInterval()",
+    :tt_onLoad => "jQuery('#backButton, #clearButton').css('display', 'none'); loadSplitSelections(); validationInterval = addValidationInterval();",
     :tt_onUnLoad => "clearInterval(validationInterval)"
   } %>
 

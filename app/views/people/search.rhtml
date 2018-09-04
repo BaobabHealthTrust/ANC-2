@@ -106,12 +106,15 @@ end -%>
         "county_district",
         "occupation",
         "cell_phone_number",
-        "national_id"
+        "national_id",
+        "patient_id"
       ]
       for (k = 0; k < fields.length; k ++){
         try{
+
           __$(fields[k]).value = "";
           __$(fields[k]).removeAttribute("name");
+          console.log(__$(fields[k]));
         }catch(e){
 
         }
@@ -119,6 +122,7 @@ end -%>
       createControlAndAssignValue("given_name", "person[names][given_name]", "<%= params[:given_name] %>");
       createControlAndAssignValue("family_name", "person[names][family_name]", "<%= params[:family_name] %>");
       createControlAndAssignValue("gender", "person[gender]", "<%=  params[:gender]%>");
+      createControlAndAssignValue("patient_id", "patient_id", "<%=  params[:patient_id]%>");
     }
 
     if(pos && (person_id == 0) && !text.match(/New Patient/)){
@@ -247,7 +251,8 @@ end -%>
 
     var pos = 1
     i = -1;
-<%(@patients).each do |data| %>
+<%
+(@patients).each do |data| %>
       i++
       people.push({});
 
@@ -259,17 +264,29 @@ end -%>
 
       people[pos]["Year"] = "<%=data.birth_date.to_date.year rescue " " %>";
       if(people[pos]["Year"] == " " ){
-        people[pos]["Year"] =  people[pos]["Birthdate"].split('/')[2].replace("??","");
+          try {
+              people[pos]["Year"] = people[pos]["Birthdate"].split('/')[2].replace("??", "");
+          }catch(exp){
+
+          }
       }
 
       people[pos]["Month"] = "<%=data.birth_date.to_date.strftime("%b") rescue "" %>";
       if(people[pos]["Month"] == "" ){
+          try {
         people[pos]["Month"] =  people[pos]["Birthdate"].split('/')[1].replace("??","");
+          }catch(exp){
+
+          }
       }
 
       people[pos]["Day"] = "<%=data.birth_date.to_date.day rescue "" %>";
       if(people[pos]["Day"] == " " ){
-        people[pos]["Day"] =  people[pos]["Birthdate"].split('/')[0].replace("??","");
+          try {
+            people[pos]["Day"] =  people[pos]["Birthdate"].split('/')[0].replace("??","");
+          }catch(exp){
+
+          }
       }
 
       people[pos]["Age"] = "<%=data.age.squish rescue nil%>";
@@ -358,7 +375,9 @@ end -%>
       <%= text_field_tag :given_name, params[:given_name], {:field_type => 'alpha', :helpText => 'First name', :ajaxURL => '/person_names/given_names?search_string=', :allowFreeText => true }%>
       <%= text_field_tag :family_name, params[:family_name], {:field_type => 'alpha', :helpText => 'Last name', :ajaxURL => '/person_names/family_names?search_string=', :allowFreeText => true }%>
       <%= hidden_field_tag :create_patient, params[:create_patient] %>
-      <%= hidden_field_tag :gender, "F" %>
+
+      <%= hidden_field_tag :gender, params[:gender] %>
+      <%= hidden_field_tag :patient_id, params[:patient_id] %>
       <%= hidden_field_tag :relation, params[:relation] %>
       <%= submit_tag "Find person" %>
     <% end -%>
@@ -399,7 +418,7 @@ end -%>
           next if patient.blank?
           -%>
           <% if @relation.blank? %>
-            <option value="<%= patient.person_id %>" onmousedown="changeNextButtonText('Select Patient')">
+            <option value="<%= patient.person_id %>" onmousedown="changeNextButtonText('Select Person')">
             <% else %>
             <option value="<%= patient.person_id %>" onmousedown="changeNextButtonText('Select Guardian')">
             <% end %>
@@ -416,13 +435,15 @@ end -%>
       <input type="hidden" id="family_name" name="family_name" value="<%=h params[:family_name] -%>" />
       <input type="hidden" id="family_name2" name="family_name2" value="<%=h params[:family_name2] -%>" />
       <input type="hidden" id="address2" name="address2" value="<%=h params[:address2] -%>" />
+      <input type="hidden" id="address2" name="address2" value="<%=h params[:address2] -%>" />
       <input type="hidden" id="relation" name="relation" value="<%=h params[:relation] -%>" />
+      <%= hidden_field_tag :patient_id, params[:patient_id] %>
     <% end -%>
   <% end -%>
 
   <script type="text/javascript" lang="javascript">
     <!--
-    var ctrls = ["identifier", "gender", "given_name", "family_name", "family_name2", "address2", "relation"];
+    var ctrls = ["identifier", "gender", "given_name", "family_name", "family_name2", "address2", "relation", "patient_id"];
 
     function clearFields(){
       for(var i = 0; i < ctrls.length; i++){

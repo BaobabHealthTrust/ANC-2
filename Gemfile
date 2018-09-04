@@ -1,7 +1,7 @@
 source 'http://rubygems.org'
 
 gem 'rails' , '2.3.5'
-#gem 'passenger'
+gem 'passenger'
 gem 'warden', '0.10.7'
 gem 'devise', '1.0.11'
 gem 'json'
@@ -16,3 +16,9 @@ gem 'rdoc',  '3.8'
 gem 'mysql', '2.9.0'
 gem 'nokogiri', '1.5.0'
 gem 'mime-types', '1.25.1'
+gem 'pdfkit'
+gem 'wkhtmltopdf-binary'
+
+group :test, :development do
+  gem 'rspec', '3.6.0'
+end

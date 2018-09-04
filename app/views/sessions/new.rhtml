@@ -1,12 +1,14 @@
   <%= javascript_include_tag "barcode" %>
   <script>
     <% 
-      nextpath = CoreService.get_global_property_value('portal_url')
-      if !nextpath.match(/^http\:\/\//i)
+      nextpath = CoreService.get_global_property_value('portal_url') rescue "" if (
+        nextpath = CoreService.get_global_property_value('use_portal') rescue false
+      )
+      if (!nextpath.match(/^http\:\/\//i) rescue false)
         nextpath = "http://" + nextpath
       end
     %>
-    var tt_cancel_destination = "<%= (!nextpath.blank? ? "#{nextpath}/search" : "/logout") %>"
+    var tt_cancel_destination = "<%= (!nextpath.blank? ? "#{nextpath}" : "/logout") %>"
     //barcodeFocusOnce = true;
     //barcodeScanAction = gotoNextPage;
 
@@ -20,7 +22,7 @@
 <form id='sessions' action="/sessions/create" method='post'>
 
     <label for="login">Username</label>
-    <%= text_field_tag(:login, nil, :helpText => "Enter user name", 
+    <%= text_field_tag(:login, nil, :helpText => "Enter user name",
         :textCase => "lower", :field_type => "normal", 
         :tt_onLoad => "inform(); barcodeId = 'touchscreenInput0';") %><br>
 

@@ -60,10 +60,16 @@ class GenericSessionsController < ApplicationController
 	end
 
 	def destroy
+
 		sign_out(current_user) if !current_user.blank?
 		self.current_location = nil
-		flash[:notice] = "You have been logged out."
-		redirect_back_or_default('/')
+
+    if CoreService.get_global_property_value('use_portal') == true
+      redirect_to CoreService.get_global_property_value('portal_url')
+    else
+      flash[:notice] = "You have been logged out."
+      redirect_back_or_default('/')
+    end
 	end
 
 	protected

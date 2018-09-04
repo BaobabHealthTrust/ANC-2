@@ -327,7 +327,7 @@ clinic_holidays = clinic_holidays.split(',').map{|day|day.to_date}.join(',')
   current = (session[:datetime] ? session[:datetime].to_date : Date.today).strftime("%Y-%m-%d")
   trimester = @weeks
 
-  periods = {22 => "20-24 weeks", 30 => "28-32 weeks", 36 => "36 weeks", 0 => "Other"}
+  periods = {22 => "20-24 weeks", 30 => "28-32 weeks", 36 => "36 weeks"}
 
   actual = periods.collect{|p, v| [v, p] if p > trimester || p == 0}
   count = []
@@ -338,7 +338,7 @@ clinic_holidays = clinic_holidays.split(',').map{|day|day.to_date}.join(',')
   	}
 %>
 
-	<% if actual.size != 1 %>
+	<% if actual.size != 1 && false %>
 		<%= select_tag("time_until_next_visit", options_for_select(actual),
 		{:helpText => "Gestation Weeks at Next Visit <span class='helper'> Appointment</span>",
 		:tt_onLoad => "transformMessages(); calculateGivenRange('#{params[:start_date]}','#{params[:end_date]}')",
@@ -364,6 +364,7 @@ clinic_holidays = clinic_holidays.split(',').map{|day|day.to_date}.join(',')
     { # :helpText => "Appointment",
       :field_type => 'calendar',
       :id => 'next_appointment_date',
+      :value => "#{@appointmentDate}",
       :startweekdate => "#{@pregnancystart.strftime("%Y-%m-%d")}",
       :endweekdate => "#{(@pregnancystart + 9.month).strftime("%Y-%m-%d")}",
       :tt_onLoad => "__$('category').style.opacity = 0.75; setGestationWeekLabel();",

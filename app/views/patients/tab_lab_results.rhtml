@@ -37,14 +37,14 @@
               border-left: 1px solid #000;
               border-bottom: 1px solid #000;"
               align="center">
-            &nbsp;<%= @syphilis_date %>&nbsp;
+            &nbsp;<%= (!@syphilis_date.blank? ? @syphilis_date : "N/A") %>&nbsp;
           </td>
           <td style="border-top: 1px solid #000;
               border-left: 1px solid #000;
               border-bottom: 1px solid #000;
               border-right: 1px solid #000;"
               align="center" <%= (!@syphilis.nil? ? (@syphilis.upcase == "POSITIVE" ? "class='selected'" : "") : "") %>>
-            &nbsp;<%= @syphilis %>&nbsp;
+            &nbsp;<%= (!@syphilis.blank? ? @syphilis : "N/A") %>&nbsp;
           </td>
         </tr>
         <tr>
@@ -60,7 +60,7 @@
               border-bottom: 1px solid #000;
               border-right: 1px solid #000; font-size: 1.5em;"
               align="center" <%= (!@hiv_test.nil? ? (@hiv_test.upcase == "POSITIVE" ? "class='selected'" : "") : "") %>>
-            <%= (!@hiv_test.nil? ? (@hiv_test.upcase == "POSITIVE" ? "=" : "-") : "") %>&nbsp;
+             <%= (!@hiv_test.blank? ? (@hiv_test.upcase == "POSITIVE" ? "=" : "-") : "") %>&nbsp;
           </td>
         </tr>
         <tr>
@@ -86,13 +86,13 @@
           <td style="border-left: 1px solid #000;
               border-bottom: 1px solid #000;"
               align="center">
-            &nbsp;<%= @hb2_date %>&nbsp;
+            &nbsp;<%= (!@hb2_date.blank? ? @hb2_date : "N/A") %>&nbsp;
           </td>
           <td style="border-left: 1px solid #000;
               border-bottom: 1px solid #000;
               border-right: 1px solid #000;"
               align="center" <%= (!@hb2.nil? ? (@hb2.to_i <= 11 && @hb2.to_s.upcase != "NOT DONE" ? "class='selected'" : "") : "") %>>
-            &nbsp;<%= @hb2 %>&nbsp;
+            &nbsp;<%= (!@hb2.blank? ? @hb2 : "N/A") %>&nbsp;
           </td>
         </tr>
 
@@ -102,13 +102,13 @@
         <td style="border-left: 1px solid #000;
             border-bottom: 1px solid #000;"
             align="center">
-          &nbsp;<%= @malaria_date %>&nbsp;
+          &nbsp;<%= (!@malaria_date.blank? ? @malaria_date : "N/A") %>&nbsp;
         </td>
         <td style="color: #000; border-left: 1px solid #000;
             border-bottom: 1px solid #000;
             border-right: 1px solid #000;"
             align="center">
-          &nbsp;<%= @malaria%>&nbsp;
+          &nbsp;<%= (!@malaria.blank? ? @malaria : "N/A") %>&nbsp;
         </td>
 
       </table>
@@ -116,7 +116,7 @@
   </tr>
 </table>
 
-<table width="100%" border="0" cellpadding="5">
+<!-- table width="100%" border="0" cellpadding="5">
   <tr>
     <th style="height: 30px; font-size: 1.4em;" align="left">
       Examination
@@ -124,7 +124,7 @@
            font-weight: normal; padding-right: 30px;">
         Refer*
       </div-->
-    </th>
+    <!-- /th>
   </tr>
   <tr>
     <td valign="top" align="center">
@@ -156,7 +156,7 @@
             &nbsp;<%= (@who == 0 ? "?" : @who) %>&nbsp;
           </td>
         </tr-->
-      </table>
+      <!-- /table>
     </td>
   </tr>
-</table>
+</table -->

@@ -167,7 +167,7 @@ module PatientService
     patient.home_village = person["person"]["addresses"]["neighborhood_cell"]
     patient.occupation = person["person"]["occupation"]
     patient.cell_phone_number = person["person"]["cell_phone_number"]
-    patient.cell_phone_number = person["person"]["home_phone_number"]
+    patient.home_phone_number = person["person"]["home_phone_number"]
     patient.citizenship = person["person"]["citizenship"]
     patient.race = person["person"]["race"]
     patient.old_identification_number = person["person"]["patient"]["identifiers"]["Old national id"]
@@ -416,6 +416,7 @@ module PatientService
     #raise known_demographics.to_yaml
 
     #Format params for BART
+    received_params = received_params.with_indifferent_access
     new_params = received_params[:person]
     known_demographics = Hash.new()
     new_params['gender'] == 'F' ? new_params['gender'] = "Female" : new_params['gender'] = "Male"
@@ -458,6 +459,10 @@ module PatientService
          }
     }
 
+    unless new_params[:patient]["identifiers"]["National id"].blank?
+      known_demographics["patient"]["identifiers"] = {"National id" => new_params["patient"]["identifiers"]["National id"]}
+    end rescue nil
+
     servers = CoreService.get_global_property_value("remote_servers.parent").split(/,/) rescue nil
     server_address_and_port = servers.to_s.split(':')
     server_address = server_address_and_port.first
@@ -470,7 +475,7 @@ module PatientService
     else
       uri = "http://#{login.first}:#{password.first}@#{server_address}:#{server_port}/patient/create_remote"
     end
-		#raise uri.to_yaml
+    
     output = RestClient.post(uri,known_demographics)
 
     results = []
@@ -1007,11 +1012,11 @@ EOF
 
     patient = PatientBean.new('')
     patient.person_id = person.id
-    patient.patient_id = person.patient.id
-    patient.arv_number = get_patient_identifier(person.patient, 'ARV Number')
+    patient.patient_id = person.patient.id rescue nil
+    patient.arv_number = get_patient_identifier(person.patient, 'ARV Number') rescue nil
     patient.address = person.addresses.first.city_village
-    patient.national_id = get_patient_identifier(person.patient, 'National id')
-	  patient.national_id_with_dashes = get_national_id_with_dashes(person.patient)
+    patient.national_id = get_patient_identifier(person.patient, 'National id') rescue nil
+	  patient.national_id_with_dashes = get_national_id_with_dashes(person.patient) rescue nil
     patient.name = person.names.first.given_name + ' ' + person.names.first.family_name rescue nil
 		patient.first_name = person.names.first.given_name rescue nil
 		patient.last_name = person.names.first.family_name rescue nil
@@ -1031,7 +1036,7 @@ EOF
     patient.eid_number = get_patient_identifier(person.patient, 'EID Number') rescue nil
     patient.pre_art_number = get_patient_identifier(person.patient, 'Pre ART Number (Old format)') rescue nil
     patient.archived_filing_number = get_patient_identifier(person.patient, 'Archived filing number')rescue nil
-    patient.filing_number = get_patient_identifier(person.patient, 'Filing Number')
+    patient.filing_number = get_patient_identifier(person.patient, 'Filing Number') rescue nil
     patient.occupation = get_attribute(person, 'Occupation')
     patient.cell_phone_number = get_attribute(person, 'Cell phone number')
     patient.office_phone_number = get_attribute(person, 'Office phone number')
@@ -1039,6 +1044,7 @@ EOF
     patient.guardian = art_guardian(person.patient) rescue nil
     patient.race = get_attribute(person, 'Race')
     patient.citizenship = get_attribute(person, 'Citizenship')
+    patient.country_of_residence = get_attribute(person, 'Country of Residence')
     patient
   end
 
@@ -1168,13 +1174,14 @@ EOF
 	end
 
   def self.create_from_form(params)
+    #raise params.inspect
     return nil if params.blank?
 		address_params = params["addresses"]
 		names_params = params["names"]
 		patient_params = params["patient"]
 		params_to_process = params.reject{|key,value| key.match(/addresses|patient|names|relation|cell_phone_number|home_phone_number|office_phone_number|agrees_to_be_visited_for_TB_therapy|agrees_phone_text_for_TB_therapy/) }
 		birthday_params = params_to_process.reject{|key,value| key.match(/gender/) }
-		person_params = params_to_process.reject{|key,value| key.match(/birth_|citizenship|race|age_estimate|occupation|identifiers/) }
+		person_params = params_to_process.reject{|key,value| key.match(/birth_|citizenship|country_of_residence|race|age_estimate|occupation|identifiers/) }
 
 		if person_params["gender"].to_s == "Female"
       person_params["gender"] = 'F'
@@ -1218,11 +1225,11 @@ EOF
 		  :value => params["home_phone_number"]) unless params["home_phone_number"].blank? rescue nil
 
     person.person_attributes.create(
-		  :person_attribute_type_id => PersonAttributeType.find_by_name("Citizenship").person_attribute_type_id,
-		  :value => params["citizenship"]) unless params["citizenship"].blank? rescue nil
+        :person_attribute_type_id => PersonAttributeType.find_by_name("Country of Residence").person_attribute_type_id,
+        :value => params["country_of_residence"]) unless params["country_of_residence"].blank? rescue nil
 
     person.person_attributes.create(
-		  :person_attribute_type_id => PersonAttributeType.find_by_name("Race").person_attribute_type_id,
+		  :person_attribute_type_id => PersonAttributeType.find_by_name("Citizenship").person_attribute_type_id,
 		  :value => params["race"]) unless params["race"].blank? rescue nil
     # TODO handle the birthplace attribute
 
@@ -1285,12 +1292,11 @@ EOF
     gender = params[:gender]
     given_name = params[:given_name].squish unless params[:given_name].blank?
     family_name = params[:family_name].squish unless params[:family_name].blank?
+    #raise gender.inspect
 
-    people = Person.find(:all, :include => [{:names => [:person_name_code]}, :patient], :conditions => [
-        "gender = ? AND \
-     person_name.given_name = ? AND \
+    people = Person.find(:all, :include => [{:names => [:person_name_code]}], :conditions => [
+        "person_name.given_name = ? AND \
      person_name.family_name = ?",
-        gender,
         given_name,
         family_name
       ]) if people.blank?
@@ -1300,11 +1306,9 @@ EOF
         person.person_id
       }
       # raise matching_people.to_yaml
-      people_like = Person.find(:all, :limit => 15, :include => [{:names => [:person_name_code]}, :patient], :conditions => [
-          "gender = ? AND \
-     person_name_code.given_name_code LIKE ? AND \
+      people_like = Person.find(:all, :limit => 15, :include => [{:names => [:person_name_code]}], :conditions => [
+          "person_name_code.given_name_code LIKE ? AND \
      person_name_code.family_name_code LIKE ? AND person.person_id NOT IN (?)",
-          gender,
           (given_name || '').soundex,
           (family_name || '').soundex,
           matching_people

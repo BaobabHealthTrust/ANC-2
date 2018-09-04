@@ -11,15 +11,15 @@
   .tt_controls_year_of_birth #Unknown { display:block; }
   .tt_controls_age_estimate #Unknown { display:none; }
 
+  .tt_controls_father_year_of_birth #Unknown { display:block; }
+
   .tt_controls_middle_name  #na { display: block; }
   .tt_controls_ground_phone_number #Unknown { display:block; }
 
   .tt_controls_region_of_origin .keyboard{display:none;}
   .tt_controls_current_region .keyboard{display:none;}
 
-  .tt_controls_month_of_birth .keyboard{display:none;}
-  #tt_page_month_of_birth .options{height:570px;}
-  #tt_page_month_of_birth .options li{font-size:30px;}
+
 
   .tt_controls_home_village #space , #apostrophe { display:inline; }
   .tt_controls_home_district #num  { display:none; }
@@ -69,10 +69,7 @@
     margin: 2px;
     -moz-user-select: none;
   }
-  #tt_page_month_of_birth .inputFrameClass{
-    height:  24em !important;
-    margin-top: 10%;
-  }
+
 
 </style>
 
@@ -325,23 +322,19 @@
   }
 
   function showSummary(field){
-    var div = document.createElement("div");
-    div.id = "status";
-    div.className = "statusLabel";
 
     if(field == "year"){
 
-      div.style.marginTop = "-4%";
-      div.style.textAlign = "center";
-      div.innerHTML = "<i>Year   =   "  + __$("person_birth_year").value + "</i>"
-      __$("inputFrame" + tstCurrentPage).appendChild(div);
+      __$('helpText' + tstCurrentPage).innerHTML = __$('helpText' + tstCurrentPage).innerHTML +
+          ("  &nbsp;&nbsp;<span style='font-style: italic;'>(??/??/" + __$("person_birth_year").value + ")</span>");
 
     }else if (field == "day"){
 
       var months = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Unknown"];
-      div.style.textAlign = "center";
-      div.innerHTML = "<i>Year   =  " + __$("person_birth_year").value + "; Month = " + months[__$("person_birth_month").value] + "</i>";
-      __$("inputFrame" + tstCurrentPage).appendChild(div);
+
+      __$('helpText' + tstCurrentPage).innerHTML = __$('helpText' + tstCurrentPage).innerHTML +
+          ("  &nbsp;&nbsp;<span style='font-style: italic;'>(??/" + months[__$("person_birth_month").value] + "/" + __$("person_birth_year").value +
+          ")</span>");
     }
   }
 
@@ -354,50 +347,77 @@
       session[:datetime].to_date.strftime("%Y-%m-%d %H:%M:%S") : Time.now) %>
   <%= hidden_field_tag "encounter[provider_id]", session[:user_id] %>
 
-  <%= text_field_tag "person[names][given_name]", params[:given_name], {:id => 'given_name', :field_type => 'alpha', :helpText => 'First name', :ajaxURL => '/person_names/given_names?search_string=', :allowFreeText => true, :condition => '$("given_name").value == "" || skipped[tstCurrentPage] == 1', :tt_onLoad => 'seen(tstCurrentPage);' } %>
+  <%= text_field_tag "person[names][given_name]",
+                     params[:given_name],
+                     {:id => 'given_name',
+                      :field_type => 'alpha',
+                      :helpText => 'First name',
+                      :ajaxURL => '/person_names/given_names?search_string=',
+                      :allowFreeText => true,
+                      :condition => '$("given_name").value == "" || skipped[tstCurrentPage] == 1',
+                      :tt_onLoad => 'seen(tstCurrentPage);'
+                     } %>
 
-  <%= text_field_tag "person[names][family_name]", params[:family_name], {:id => 'family_name', :field_type => 'alpha', :helpText => 'Last name', :ajaxURL => '/person_names/family_names?search_string=', :allowFreeText => true, :condition => '$("family_name").value == "" || skipped[tstCurrentPage] == 1', :tt_onLoad => 'seen(tstCurrentPage);' } %>
+  <%= text_field_tag "person[names][family_name]",
+                     params[:family_name],
+                     {:id => 'family_name',
+                      :field_type => 'alpha',
+                      :helpText => 'Last name',
+                      :ajaxURL => '/person_names/family_names?search_string=',
+                      :allowFreeText => true,
+                      :condition => '$("family_name").value == "" || skipped[tstCurrentPage] == 1',
+                      :tt_onLoad => 'seen(tstCurrentPage);'
+                     } %>
 
-  Gender: <%= f.select :gender, options_for_select([["", ""], ["Male", "M"], ["Female", "F"]], "F"),
-    {:selected => "F"}, {:id => 'gender',
-    :helpText => 'Gender',
-    :condition => 'false/*$("gender").value == "" || skipped[tstCurrentPage] == 1*/',
-    :tt_onLoad => 'seen(tstCurrentPage);',
-    :tt_onUnLoad => "if(__$('gender').value.toLowerCase() == 'm'){
-    __$('person_birth_year').setAttribute('absoluteMin', #{(session[:datetime] || Date.today).to_date.year - 6});
-    }"
-  }  %>
+  Gender:
+  <%= f.select :gender,
+               options_for_select([["", ""], ["Male", "M"], ["Female", "F"]], "F"),
+               {:selected => "F"},
+               {:id => 'gender',
+                :helpText => 'Gender',
+                :condition => 'false/*$("gender").value == "" || skipped[tstCurrentPage] == 1*/',
+                :tt_onLoad => 'seen(tstCurrentPage);',
+                :tt_onUnLoad => "if(__$('gender').value.toLowerCase() == 'm')
+                    { __$('person_birth_year').setAttribute('absoluteMin',
+                    #{(session[:datetime] || Date.today).to_date.year - 6});}"
+               }  %>
 
   <%#= hidden_field_tag :gender, "F" %>
 
-  <%= text_field_tag "person[names][middle_name]", params[:middle_name],
-    {:id => 'middle_name',
-    :field_type => 'alpha',
-    :helpText => 'Middle name',
-    :ajaxURL => '/person_names/middle_name?search_string=',
-    :allowFreeText => true,
-    :condition => '$("middle_name").value == "" || skipped[tstCurrentPage] == 1',
-    :tt_pageStyleClass => "azButton",
-    :tt_onLoad => 'seen(tstCurrentPage);' } if ask_middle_name %>
+  <%= text_field_tag "person[names][middle_name]",
+                     params[:middle_name],
+                     {:id => 'middle_name',
+                      :field_type => 'alpha',
+                      :helpText => 'Middle name',
+                      :ajaxURL => '/person_names/middle_name?search_string=',
+                      :allowFreeText => true,
+                      :condition => '$("middle_name").value == "" || skipped[tstCurrentPage] == 1',
+                      :tt_pageStyleClass => "azButton",
+                      :tt_onLoad => 'seen(tstCurrentPage);'
+                     } if ask_middle_name %>
 
-  <%= text_field_tag "person[birth_year]", nil, {
-    :helpText => 'Year of Birth',
-    :field_type => 'number',
-    :absoluteMin => ((session[:datetime] || Date.today).to_date.year - 55),
-    :min => ((session[:datetime] || Date.today).to_date.year - 50),
-    :max => ((session[:datetime] || Date.today).to_date.year - 10),
-    :absoluteMax => ((session[:datetime] || Date.today).to_date.year - 13),
-    :tt_pageStyleClass => "Numeric NumbersOnly",
-    :tt_onLoad => 'seen(tstCurrentPage);',
-    :validationJS => "setDOB();"
-  }  %>
+  <%= text_field_tag "person[birth_year]",
+                     nil,
+                     {:helpText => 'Year of Birth',
+                      :field_type => 'number',
+                      :absoluteMin => ((session[:datetime] || Date.today).to_date.year - 55),
+                      :min => ((session[:datetime] || Date.today).to_date.year - 50),
+                      :max => ((session[:datetime] || Date.today).to_date.year - 10),
+                      :absoluteMax => ((session[:datetime] || Date.today).to_date.year - 13),
+                      :tt_pageStyleClass => "Numeric NumbersOnly",
+                      :tt_onLoad => 'seen(tstCurrentPage);',
+                      :validationJS => "setDOB();"
+                     }  %>
   <% i = 0 %>
-  <%= select_tag "person[birth_month]", options_for_select(@month_names), {:helpText => 'Month of Birth',
-    :condition => '$("person_birth_year").value.toLowerCase() != "unknown"',
-    :validationJS => "validateDOB();",
-    :tt_onLoad => "selectAll = false; createSingleSelectControl(''); showSummary('year')",
-    :tt_pageStyleClass => "NoKeyboard",
-    :validationMessage => 'Please enter a valid date'}%>
+  <%= select_tag "person[birth_month]",
+                 options_for_select(@month_names),
+                 {:helpText => 'Month of Birth',
+                  :condition => '$("person_birth_year").value.toLowerCase() != "unknown"',
+                  :validationJS => "validateDOB();",
+                  :tt_onLoad => "selectAll = false;  showSummary('year')",
+                  :tt_pageStyleClass => "longSelectList NoKeyboard",
+                  :validationMessage => 'Please enter a valid date'
+                 } %>
 
   <%= text_field_tag "person[age_estimate]", nil, {
     :helpText => 'Age Estimate',
@@ -428,6 +448,7 @@
     :allowFreeText => true,
     :ajaxURL => "/people/static_nationalities?&search_string=",
     :tt_onLoad => "$('nextButton').style.display = 'block';",
+    :tt_BeforeUnLoad => "$('person_citizenship').value = $('person_race').value",
     :condition => '($("person_citizenship").value != "Malawian")'%>
   <p><label for="region_region_name">Region of Origin</label></br>
 
@@ -459,7 +480,8 @@
     :condition => '($("address2").value != "Other") && ($("person_citizenship").value == "Malawian")',
     :helpText => 'Ancestral Traditional Authority (T/A) or area of residence',
     :tt_requireNextClick => false, :ajaxURL => '', :tt_pageStyleClass => "azButton",
-    :tt_onLoad => "set_ajaxURL_for_suggestions('/people/traditional_authority/TraditionalAuthority?filter_value=' ,document.getElementById('address2').value);$('nextButton').style.display = 'none';" if ask_home_village  %></p>
+    :tt_onLoad => "set_ajaxURL_for_suggestions('/people/traditional_authority/TraditionalAuthority?filter_value='
+    ,document.getElementById('address2').value);$('nextButton').style.display = 'none';" if ask_home_village  %></p>
 
   <%= text_field_tag "person[addresses][neighborhood_cell]", params[:city_village],
     {

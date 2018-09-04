@@ -249,9 +249,18 @@ module ApplicationHelper
       User.current_user.id]).property_value rescue 'abc'
   end
 
-  def create_from_dde_server                                                    
-    CoreService.get_global_property_value('create.from.dde.server').to_s == "true" rescue false
-  end 
+  def military_site?
+    return false
+  end
+
+  def create_from_dde
+    dde_status = GlobalProperty.find_by_property('dde.status').property_value.to_s.squish rescue 'OFF'#New DDE API
+    if (dde_status.upcase == 'ON')
+      return true
+    else
+      return false
+    end
+  end
 
   def current_user_roles                                                        
     user_roles = UserRole.find(:all,:conditions =>["user_id = ?", User.current_user.id]).collect{|r|r.role}
@@ -320,4 +329,5 @@ module ApplicationHelper
   def ask_gender
     GlobalProperty.find_by_property("ask_gender").property_value rescue false
   end
+  
 end

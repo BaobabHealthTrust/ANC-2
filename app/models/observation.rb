@@ -39,7 +39,7 @@ class Observation < ActiveRecord::Base
   end
   
   def concept_name=(concept_name)
-    self.concept_id = ConceptName.find_by_name(concept_name).concept_id
+    self.concept_id = ConceptName.find_by_name(concept_name).concept_id rescue nil
   rescue
     raise "\"#{concept_name}\" does not exist in the concept_name table"
   end

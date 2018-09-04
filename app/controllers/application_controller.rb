@@ -1,5 +1,25 @@
 class ApplicationController < GenericApplicationController
-
+  #before_filter :set_dde_token
+=begin
+  def set_dde_token
+    if create_from_dde
+      unless current_user.blank?
+        if session[:dde_token].blank?
+          dde_token = DDEService.dde_authentication_token
+          session[:dde_token] = dde_token
+        else
+          token_status = DDEService.verify_dde_token_authenticity(session[:dde_token])
+          if token_status.to_s == '401'
+            dde_token = DDEService.dde_authentication_token
+            session[:dde_token] = dde_token
+          end
+        end
+      end
+    else
+      session[:dde_token] = nil  
+    end
+  end
+=end
   def next_task(patient)
 
     session_date = session[:datetime].to_date rescue Date.today
@@ -121,9 +141,10 @@ class ApplicationController < GenericApplicationController
       session["proceed_to_art"]["#{(session[:datetime] || Time.now()).to_date.strftime("%Y-%m-%d")}"] = {} if session["proceed_to_art"]["#{(session[:datetime] || Time.now()).to_date.strftime("%Y-%m-%d")}"].nil?
 
       if create_from_dde_server
-        @external_id = Bart2Connection::PatientIdentifier.search_by_identifier(@anc_patient.national_id).person_id# rescue nil
+        @external_id = Bart2Connection::PatientIdentifier.search_by_identifier(@anc_patient.national_id).person_id rescue nil
+        @external_id = Bart2Connection::PatientIdentifier.search_or_create(@anc_patient.national_id).person_id if @external_id.blank?
       else
-        @external_id = Bart2Connection::PatientIdentifier.search_or_create(@anc_patient.national_id).person_id #rescue nil
+        @external_id = Bart2Connection::PatientIdentifier.search_or_create(@anc_patient.national_id).person_id rescue nil
       end
       @external_user_id = Bart2Connection::User.find_by_username(current_user.username).id rescue nil
 

@@ -35,7 +35,7 @@
     <%= touch_text_field_tag "ARV Number", @patient, nil,
        {:id => "arv_number",
         :optional => true,
-        :helptext => "ARV Number <span class='helper'> ART Details</span>",
+        :helptext => "ARV Number (Optional) <span class='helper'> ART Details</span>",
         :tt_onUnLoad => "parsedConceptName = '';",
         :condition => "__$('on_art').value == 'Yes'"
        } %>

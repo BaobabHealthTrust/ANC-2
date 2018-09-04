@@ -21,7 +21,7 @@
 </head>
 <body>
   <center>
-    <h2 style="color: #6281a7;">&nbsp;</h2>
+<h2 style="color: #6281a7;">Administration</h2>
     <button onclick="parent.window.location = '/user/new/<%= current_user.user_id %>';">
       Create User
     </button>    
@@ -36,6 +36,9 @@
     </button>
     <button onclick="window.location = 'data_cleaning_tools/s<%= current_user.user_id %>';">
       Data Cleaning Tools
+    </button>
+    <button onclick="window.location = 'configurations/<%= current_user.user_id %>';">
+      Configurations
     </button>
   </center>
 </body>

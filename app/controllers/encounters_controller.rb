@@ -2,7 +2,7 @@ class EncountersController < ApplicationController
   before_filter :find_patient, :except => [:void, :probe_lmp]
 
   def create
-    
+    #raise params.inspect
     @patient = Patient.find(params[:encounter][:patient_id])
     #raise params[:observations].to_yaml
     if params[:void_encounter_id]
@@ -15,7 +15,6 @@ class EncountersController < ApplicationController
 
     # Encounter handling
     #raise params[:encounter][:encounter_type_name].to_yaml
-  
     encounter = Encounter.new(params[:encounter])
     encounter.encounter_datetime = session[:datetime].to_date unless session[:datetime].blank?
     encounter.save
@@ -77,6 +76,10 @@ class EncountersController < ApplicationController
       end
     end
     if params[:encounter][:encounter_type_name] == 'VITALS'
+      if params[:observations][0][:value_text].to_s.downcase == "unknown"
+        params[:observations][1][:value_text] = "Unknown"
+      end
+
       params[:concept].each{|concept|
 
         concept = concept.split(':')
@@ -88,7 +91,6 @@ class EncountersController < ApplicationController
             :encounter_id => encounter.id,
             :value_text => concept[0][1],
             :obs_datetime => encounter.encounter_datetime)
-
           obs.save
         end
       }
@@ -185,8 +187,20 @@ class EncountersController < ApplicationController
     # Go to the next task in the workflow (or dashboard)
     redirect_to next_task(@patient) 
   end
+  
+  def pregnancy_start_date_and_weeks
+
+      r = ConceptName.find_by_name('Date of last menstrual period').concept_id
+      lmp = ActiveRecord::Base.connection.select_all("select MAX(o.value_datetime) as lmp_date FROM obs o where o.person_id = #{@patient.patient_id}  and o.concept_id = #{r}")
+      diff = (Time.now.to_date - lmp[0]["lmp_date"].to_date rescue 0).to_i 
+      weeks = diff == 0 ? 0 : (diff / 7)
+      
+      return [lmp[0]["lmp_date"], weeks]
+  end
 
   def new
+
+    @weeks = 0
 
     d = (session[:datetime].to_date rescue Date.today)
     t = Time.now
@@ -195,8 +209,17 @@ class EncountersController < ApplicationController
     @current_range = @anc_patient.active_range(session_date.to_date) rescue nil
     
     @weeks = @anc_patient.fundus(session_date.to_date).to_i rescue 0
+    
+    if @weeks == 0
+
+       res = pregnancy_start_date_and_weeks
+       @weeks = res[1]
+       @pregnancystart = res[0].to_date rescue 0
        
-    @pregnancystart = session_date.to_date - (@weeks rescue 0).week
+    else
+      @pregnancystart = session_date.to_date - (@weeks rescue 0).week
+    end
+    
     @last_vitals = Encounter.find_by_sql("
                     SELECT * FROM  encounter e 
                     INNER JOIN encounter_type et ON et.encounter_type_id = e.encounter_type
@@ -205,18 +228,56 @@ class EncountersController < ApplicationController
                     AND e.patient_id = #{params[:patient_id]}
                     AND e.encounter_datetime < '#{d.strftime('%Y-%m-%d 23:59:59')}'
                     ORDER BY e.encounter_datetime DESC LIMIT 1").first.encounter_id rescue []
-   
+
+    # Automate the appointment date
+    if (@weeks > 0)
+      periods = [22,30,36]
+      @actual_array = []
+      periods.each do |p|
+        @actual_array << p if p > @weeks
+      end
+      #@actual_array = periods.collect{|p| p if p > @weeks}
+      #raise @actual_array.inspect
+      @days = @actual_array[0] * 7 rescue 0
+
+      if(@pregnancystart.blank?)
+        lmp_value = (session[:datetime] ? session[:datetime].to_date : Date.today).strftime("%Y-%m-%d")
+        @appointmentDate = lmp_value.to_date
+      else
+        @appointmentDate = @pregnancystart.to_date
+      end
+      @appointmentDate = (@appointmentDate + @days).strftime("%Y-%m-%d")
+    end
+       
     if ! @last_vitals.blank?
       @first = "false"
       @vital = {}
       weight = ConceptName.find_by_name("WEIGHT (KG)").concept_id
       height = ConceptName.find_by_name("HEIGHT (CM)").concept_id
       bmi = ConceptName.find_by_name("BMI").concept_id
-      @vital["weight"] = Observation.find(:first, :conditions => ["concept_id = ? AND voided = 0", weight]).to_s.split(':')[1] rescue ""
-      @vital["height"] = Observation.find(:first, :conditions => ["concept_id = ? AND voided = 0", height]).to_s.split(':')[1] rescue ""
-      @vital["bmi"] = Observation.find(:first, :conditions => ["concept_id = ? AND voided = 0", bmi]).to_s.split(':')[1] rescue ""
+      @vital["weight"] = Observation.find(:last,
+                                          :conditions => ['concept_id = ?
+                                                          AND voided = 0
+                                                          AND person_id = ?',
+                                                          weight, params[:patient_id]]
+                                          ).to_s.split(':')[1] rescue ''
+
+      @vital["height"] = Observation.find(:last,
+                                          :conditions => ['concept_id = ?
+                                                          AND voided = 0
+                                                          AND person_id = ?',
+                                                          height, params[:patient_id]]
+                                          ).to_s.split(':')[1] rescue ''
+
+      @vital["bmi"] = Observation.find(:last,
+                                       :conditions => ['concept_id = ?
+                                                       AND voided = 0
+                                                       AND person_id = ?',
+                                                       bmi,
+                                                        params[:patient_id]]
+                                       ).to_s.split(':')[1] rescue ''
     else
-      @first = "true"
+      @first = 'true'
     end
     
     
@@ -270,7 +331,7 @@ class EncountersController < ApplicationController
     redirect_to next_task(@patient) and return unless params[:encounter_type]
     
     redirect_to :action => :create, 'encounter[encounter_type_name]' => params[:encounter_type].upcase, 'encounter[patient_id]' => @patient.id and return if ['registration'].include?(params[:encounter_type])
-
+    
     render :action => params[:encounter_type] if params[:encounter_type]
   end
 
@@ -386,21 +447,21 @@ class EncountersController < ApplicationController
     diagnosis_concepts = params[:include_none].present? ? ["None"] : []
     diagnosis_concepts += ["Malaria",
       "Anaemia", 
-      "Severe Anaemia", 
+      #"Severe Anaemia", 
       "Pre-eclampsia", 
-      "Eclampsia", 
+      #"Eclampsia", 
       "Vaginal Bleeding", 
-      "Severe Headache", 
-      "Blurred vision", 
-      "Oedema", 
-      "Dizziness", 
-      "Fever", 
+      #"Severe Headache", 
+      #"Blurred vision", 
+      #"Oedema", 
+      #"Dizziness", 
+      #"Fever", 
       "Early rupture of membranes", 
       "Premature Labour", 
-      "Labour Pains", 
-      "Abdominal Pain", 
+      #"Labour Pains", 
+      #"Abdominal Pain", 
       "Pneumonia", 
-      "Threatened Abortion", 
+      #"Threatened Abortion", 
       "Extensive Warts"] - exceptions
   
     @results = diagnosis_concepts.collect{|e| e}.delete_if{|x| !x.match(/^#{search_string}/)}
@@ -444,6 +505,63 @@ class EncountersController < ApplicationController
   def hemorrhage_options
 
     render :text => (["No", "APH", "PPH"]).join('|')  and return
+  end
+
+  def duplicate_encounters
+    if request.get? && params[:type].blank?
+      render :template => "/patients/encounter_cleaning_date_range" and return  
+    else
+      @start_date = params[:start_date]
+      @end_date = params[:end_date]
+      @duplicate_encounters = ActiveRecord::Base.connection.select_all("
+      SELECT patient_id, encounter_type,
+      (SELECT name FROM encounter_type WHERE encounter_type_id = encounter.encounter_type) type,
+      (SELECT CONCAT(given_name, ' ', family_name) FROM person_name WHERE voided = 0 AND person_id = encounter.patient_id LIMIT 1) name,
+      (SELECT identifier FROM patient_identifier WHERE voided = 0 AND patient_id = encounter.patient_id AND identifier_type = 3 LIMIT 1) national_id,
+      DATE(encounter_datetime) visit_date, count(*) c
+      FROM encounter WHERE voided = 0 AND Date(encounter_datetime) >= '#{@start_date}'
+      AND Date(encounter_datetime) <= '#{@end_date}'
+      GROUP by patient_id, encounter_type, visit_date
+      HAVING
+      IF (type = 'VITALS',
+       c > 2 ,
+       c > 1)
+      ;")
+
+      
+      session[:cleaning_params] = params
+      render :layout => 'report'
+    end
+
+    @start_date = params[:start_date] || "2000-01-01".to_date
+    @end_date = params[:end_date] || Date.today
+
+
+
+
+
+
+  end
+
+  def duplicates
+    @data = []
+    @name = EncounterType.find(params[:encounter_type]).name
+    @patient_name = Person.find(params[:patient_id]).name
+
+    encounters = Encounter.find_by_sql("
+      SELECT * FROM encounter
+        WHERE voided = 0 AND encounter_type = #{params[:encounter_type]}
+          AND patient_id = #{params[:patient_id]} AND DATE(encounter_datetime) = '#{params[:date]}'
+        ORDER by encounter_datetime DESC
+    ").each do |enc|
+      data = {'encounter_id' => enc.encounter_id, 'encounter_datetime' => enc.encounter_datetime}
+      enc.observations.each do |ob|
+        data[ob.concept.name.name.strip] = ob.answer_string
+      end
+      @data << data
+    end
+
+    render :layout => false
   end
   
 end

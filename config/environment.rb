@@ -15,7 +15,8 @@ Rails::Initializer.run do |config|
   # config.time_zone = 'UTC'
 	config.gem 'warden'
 	config.gem 'devise'
-  
+  config.middleware.use 'PDFKit::Middleware', :print_media_type => true
+
   config.action_controller.session = {
     :session_key => 'bart_session',
     :secret      => '8sgdhr431ba87cfd9bea177ba3d344a67acb0f179753f37d28db8bd102134261cdb4b1dbacccb126435631686d66e148a203fac1c5d71eea6abf955a66a472ce'
@@ -32,6 +33,7 @@ require 'json'
 require 'colorfy_strings'
 require 'rest-client'
 require 'mechanize'
+require 'pdfkit'
 
 ActiveSupport::Inflector.inflections do |inflect|
   inflect.irregular 'person_address', 'person_address'

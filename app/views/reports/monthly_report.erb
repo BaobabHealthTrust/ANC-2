@@ -1,0 +1,508 @@
+<html>
+  <head>
+    <title>Report</title>
+    <%= stylesheet_link_tag "form" %>
+    <%= stylesheet_link_tag fancy_or_high_contrast_touch %>
+    <link href="/stylesheets/dashboard.css" media="screen" rel="stylesheet" type="text/css" />
+    <script type="text/javascript" language="javascript">
+      <!--
+      tt_cancel_destination = '/reports/select';
+      tt_show = '/clinic';
+
+      cTable = "";
+      tableRows = JSON.parse('<%= @failures.to_json %>');
+
+      function buildConsistencyTable() {
+          cTable = document.getElementById("consistency-section");
+          if (!cTable)
+            return;
+
+          cTable.innerHTML = null;
+
+          var tRows = "";
+          if (tableRows.length < 1) {
+              tRows += "<tr><td class='pass-rows'>The report has passed all external consistency checks</td></tr>";
+          } else {
+              for (var i = 0; i < tableRows.length; i++) {
+                  tRows += "<tr><td class='err-rows err-num'>" + (i + 1) + "</td>";
+                  tRows += "<td class='err-rows'>" + tableRows[i] + "</td></tr>";
+              }
+          }
+          cTable.innerHTML = tRows;
+      }
+
+      function getUrlParams() {
+
+        // get query string from url (optional) or window
+        var queryString = window.location.search.slice(1);
+
+        // we'll store the parameters here
+        var obj = {};
+
+        // if query string exists
+        if (queryString) {
+
+          // stuff after # is not part of query string, so get rid of it
+          queryString = queryString.split('#')[0];
+
+          // split our query string into its component parts
+          var arr = queryString.split('&');
+
+          for (var i=0; i<arr.length; i++) {
+            // separate the keys and the values
+            var a = arr[i].split('=');
+
+            // in case params look like: list[]=thing1&list[]=thing2
+            var paramNum = undefined;
+            var paramName = a[0].replace(/\[\d*\]/, function(v) {
+              paramNum = v.slice(1,-1);
+              return '';
+            });
+
+            // set parameter value (use 'true' if empty)
+            var paramValue = typeof(a[1])==='undefined' ? true : a[1];
+
+            // (optional) keep case consistent
+            paramName = paramName.toLowerCase();
+            paramValue = paramValue.toLowerCase();
+
+            // if parameter name already exists
+            if (obj[paramName]) {
+              // convert value to array (if still string)
+              if (typeof obj[paramName] === 'string') {
+                obj[paramName] = [obj[paramName]];
+              }
+              // if no array index number specified...
+              if (typeof paramNum === 'undefined') {
+                // put the value on the end of the array
+                obj[paramName].push(paramValue);
+              }
+              // if array index number specified...
+              else {
+                // put the value at that index number
+                obj[paramName][paramNum] = paramValue;
+              }
+            }
+            // if param name doesn't exist yet, set it
+            else {
+              obj[paramName] = paramValue;
+            }
+          }
+        }
+
+        return obj;
+      }
+
+
+      function fetchData(){
+        params = getUrlParams();
+        var month = params['month'];
+        var year = params['year'];
+
+        url = "/reports/report/?month="+month+"&year="+year+"&type=anc_monthly"
+        $.getJSON(url, function(data) {
+          alert(data);
+          // var items = [];
+          // $.each( data, function( key, val ) {
+          //   items.push( "<li id='" + key + "'>" + val + "</li>" );
+          // });
+         
+          // $( "<ul/>", {
+          //   "class": "my-new-list",
+          //   html: items.join( "" )
+          // }).appendTo( "body" );
+        });
+
+        console.log(params['month'])
+      }
+
+      //fetchData();
+
+      //-->
+    </script>
+    <style media="print">
+      button {
+        display: none;
+      }
+      #main {
+        height: 100%;
+      }
+    </style>
+    <style>
+
+        .err-rows {
+            background-color: red;
+            color: white;
+        }
+
+        .pass-rows {
+            background-color: green;
+            color: black;
+            border: 1px solid #000000;
+        }
+
+        .err-num {
+            width: 3%;
+        }
+      #Unknown {display: none;}
+      #num {display: none;}
+      #main {
+        height: 440px;
+      }
+
+      a:link {
+        color: #000;
+        text-decoration: none;
+      }
+
+      a:hover {
+        color: orange !important;
+        text-decoration: underline;
+      }
+
+      a:visited {
+        color: #000;
+        text-decoration: none;
+      }
+      .valueCell {
+        border: 3px solid #000;
+      }
+      table.report td {
+        padding-top: 10px;
+        padding-bottom: 5px;
+      }
+      table.report {
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+  <div id="contentt">
+    <div style="background-color: #fff; height: 660px; width: 99%; padding: 5px;">
+      <table style="width: 100%; -moz-user-select: none;">
+        <tr>
+          <th style="font-size: 1.8em; color: #eee; background-color: #999; padding: 10px;">
+            MONTHLY ANTENATAL CLINIC DATA
+          </th>
+        </tr>
+        <tr>
+          <td style="border: 1px solid #999;">
+            <table width="100%" cellspacing="0" cellpadding="5">
+              <tr>
+                <td style="width: 25%;">
+                  NAME OF FACILITY
+                </td>
+                <td style="border-left: 1px solid #999; border-bottom: 1px solid #999;
+                      font-style: italic;width: 25%;">
+                  <%= @facility %>&nbsp;
+                </td>
+                <td style="width: 25%; border-left: 1px solid #999; border-bottom: 1px solid #999;" align="right">
+                    DISTRICT
+                </td>
+                <td style="border-left: 1px solid #999; border-bottom: 1px solid #999;
+                      font-style: italic;width: 25%;">
+                  
+                </td>
+              </tr>
+              <tr>
+                <td style="width: 25%;">
+                  MONTH OF
+                </td>
+                <td style="border-left: 1px solid #999; border-bottom: 1px solid #999;
+                      font-style: italic;width: 25%;">
+                  <%= @start_date.to_date.strftime("%B") rescue "" %>&nbsp;
+                </td>
+                <td style="width: 25%; border-left: 1px solid #999; border-bottom: 1px solid #999;" align="right">
+                    YEAR
+                </td>
+                <td style="border-left: 1px solid #999; border-bottom: 1px solid #999;
+                      font-style: italic;width: 25%;">
+                  <%= @start_date.to_date.strftime("%Y") rescue "" %>&nbsp;
+                </td>
+              </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="overflow: auto; border-bottom: 1px solid #999; vertical-align: top;">
+              <div id="main" style="width: 98%; overflow: auto; padding: 10px;">
+                <table class="report">
+                  <tr>
+                    <td  colspan="3">
+                      TOTAL NUMBER OF ANTENATAL VISITS
+                    </td>
+                    <td style="border: 1px solid #999; width: 25%; text-align: center;">
+                      <%= @total_no_of_anc_visits.length %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="3">
+                      NEW VISITS
+                    </td>
+                    <td style="border: 1px solid #999; border-top: 0px; width: 25%; text-align: center;">
+                      <%= @new_visits.length %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="3">
+                      SUBSEQUENT VISITS
+                    </td>
+                    <td style="border: 1px solid #999; border-top: 0px; width: 25%; text-align: center;">
+                      <%= @subseq_visits.length %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colsan="4">
+                      <b><u>DISTRIBUTION OF NEW VISITS</u></b>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="3">
+                      1<sup>ST</sup> TRIMESTER
+                    </td>
+                    <td style="border: 1px solid #999; width: 25%; text-align: center;">
+                      <%= @first_trimester.length %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="3">
+                      2<sup>ND</sup> TRIMESTER
+                    </td>
+                    <td style="border: 1px solid #999; border-top: 0px; width: 25%; text-align: center;">
+                      <%= @second_trimester.length %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="3">
+                      3<sup>RD</sup> TRIMESTER
+                    </td>
+                    <td style="border: 1px solid #999; border-top: 0px; width: 25%; text-align: center;">
+                      <%= @third_trimester.length %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="3">
+                      TEENEGER PREGNANCIES
+                    </td>
+                    <td style="border: 1px solid #999; border-top: 0px; width: 25%; text-align: center;">
+                      <%= @teenegers.length %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="3">
+                      WOMEN ATTENDING ALL 4 FANC VISITS
+                    </td>
+                    <td style="border: 1px solid #999; border-top: 0px; width: 25%; text-align: center;">
+                      ... <!-- Needs clarification -->
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="3">
+                      WOMEN SCREENED FOR SYPHILIS
+                    </td>
+                    <td style="border: 1px solid #999; border-top: 0px; width: 25%; text-align: center;">
+                      <%= @screened_for_syphilis.length %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="3">
+                      WOMEN CHECKED Hb
+                    </td>
+                    <td style="border: 1px solid #999; border-top: 0px; width: 25%; text-align: center;">
+                      <%= @checked_hb.length %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="3">
+                      WOMEN RECEIVED SP1
+                    </td>
+                    <td style="border: 1px solid #999; border-top: 0px; width: 25%; text-align: center;">
+                      <%= @received_sp_1.length %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="3">
+                      WOMEN RECEIVED SP2
+                    </td>
+                    <td style="border: 1px solid #999; border-top: 0px; width: 25%; text-align: center;">
+                      <%= @received_sp_2.length %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="3">
+                      WOMEN RECEIVED SP3
+                    </td>
+                    <td style="border: 1px solid #999; border-top: 0px; width: 25%; text-align: center;">
+                      <%= @received_sp_3.length %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="3">
+                      WOMEN RECEIVED  DOSES OF TTV OR HAS ADEQUETE TTV (5 doses)
+                    </td>
+                    <td style="border: 1px solid #999; border-top: 0px; width: 25%; text-align: center;">
+                      <%= @received_ttv.length %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="3">
+                      WOMEN RECEIVED 120 TABLETS OF IRON/F/S4
+                    </td>
+                    <td style="border: 1px solid #999; border-top: 0px; width: 25%; text-align: center;">
+                      <%= @received_iron.length %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="3">
+                      WOMEN RECEIVED ALBENDAZOLE
+                    </td>
+                    <td style="border: 1px solid #999; border-top: 0px; width: 25%; text-align: center;">
+                      <%= @received_albendazole.length %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="3">
+                      WOMEN RECEIVED ITN
+                    </td>
+                    <td style="border: 1px solid #999; border-top: 0px; width: 25%; text-align: center;">
+                      <%= @received_itn.length %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="3">
+                      WOMEN TESTED HIV POSITIVE
+                    </td>
+                    <td style="border: 1px solid #999; border-top: 0px; width: 25%; text-align: center;">
+                      <%= @tested_positive.length %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="3">
+                      WOMEN PREVIOUSLY HIV POSITIVE 
+                    </td>
+                    <td style="border: 1px solid #999; border-top: 0px; width: 25%; text-align: center;">
+                      <%= @prev_tested_positive.length %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="3">
+                      WOMEN ON CPT
+                    </td>
+                    <td style="border: 1px solid #999; border-top: 0px; width: 25%; text-align: center;">
+                      <%= @women_on_cpt.length %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="3">
+                      WOMEN ON ART
+                    </td>
+                    <td style="border: 1px solid #999; border-top: 0px; width: 25%; text-align: center;">
+                      <%= @women_on_art.length %>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="4">
+                      <b><u>OUTREACH CLINIC</u></b>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="3">
+                      TOTAL NUMBER OF OUTREACH CLINICS
+                    </td>
+                    <td style="border: 1px solid #999; width: 25%; text-align: center;">
+                      ... <!-- Needs clarification-->
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="3">
+                      TOTAL NUMBER OF OUTREACH CLINICS ATTENDED
+                    </td>
+                    <td style="border: 1px solid #999; border-top: 0px; width: 25%; text-align: center;">
+                      ...
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="3">
+                      REASONS TO THOSE NOT ATTEDED
+                    </td>
+                    <td style="border: 1px solid #999; border-top: 0px; width: 25%; text-align: center;">
+                      ...
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <b>COMPILED BY</b>
+                    </td>
+                    <td style="border-bottom: 1px dotted #999; width: 25%; text-align: center;">
+                      
+                    </td>
+                    <td>
+                      <b>DATE</b>
+                    </td>
+                    <td style="border-bottom: 1px dotted #999; width: 25%; text-align: center;">
+                      <b><%= @date_today %></b>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </div>
+      <div id="nav">
+        <button class="green" style="width: 140px; float: right; margin: 10px;" onclick="window.location = tt_show">
+          <span>
+            Finish
+          </span>
+        </button>
+
+        <% #@parameters =  @parameters.delete_if{|k, v| k.match(/action|controller/)}.collect{|k, v| k + "=" + v}.join("&")
+         %>
+        <button class="blue" style="width: 140px; float: right; margin: 10px;"  onmousedown="javascript:printPDF();">
+          <span>
+            Print
+          </span>
+        </button>
+
+        <button class="red" style="width: 110px; float: left; margin-top: 10px;" onclick="window.location = tt_show">
+          <span>
+            Cancel
+          </span>
+        </button>
+      </div>
+    </div>
+  <!-- form id="pdf" method="post" action="/reports/report_pdf.pdf" name="pdf_printout" -->
+  </form>
+  </body>
+
+<!-- script>
+    if (tableRows.length > 0){
+        buildConsistencyTable();
+    }
+
+    function printPDF() {
+      var print_pdf_attr = {"end_date":"",
+          "controller":"reports", "day":"",
+          "start_date":"", "selQtr":"",
+          "action":"report",
+          "selMonth":< %= Date::MONTHNAMES.index(@end_date.to_date.strftime('%B')) rescue "" %>,
+          "selSelect":"", "selWeek":"",
+          "selYear":< %= @end_date.to_date.strftime("%Y") rescue "" %>};
+
+      var pdfForm = document.getElementById('pdf')
+      for (name in print_pdf_attr){
+        var input = document.createElement('input');
+        input.setAttribute('type','hidden');
+        input.setAttribute('name',name);
+        input.setAttribute('value', print_pdf_attr[name]);
+        pdfForm.appendChild(input);
+      }
+
+      document.pdf_printout.target = "my_pdf";
+      var w = (window.innerWidth - 80) ; var h = (window.innerHeight - 8);
+      window.open("","my_pdf","width=" + w + ",height=" + h + ",toolbar=0");
+      document.pdf_printout.submit();
+    }
+
+</script -->
+</html>

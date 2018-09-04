@@ -1,0 +1,152 @@
+<script>
+    function loadVisit(patient_id, visit_date){
+       location.href = "/patients/show/" + patient_id + "?session_date=" + visit_date.replace(/\//g, "-") +"&data_cleaning=true" + "&from_encounters=false";
+    }
+</script>
+<style type="text/css">
+  body {
+    -moz-user-select:none;
+  }
+
+  #stats, #stats2 {
+    width:99%;
+    border:1px solid #eee;
+    margin:auto;
+    margin-top: 0px;
+    background:white;
+  }
+  #stats2 td, #stats th {
+    text-align:center;
+    padding: 0.5%;
+  }
+  #stats tr:nth-child(even){
+    background-color: #eeeef7;
+  }
+   #stats tr td:nth-child(2){
+    text-align: left;
+    padding-left: 2%;
+  }
+    th{
+        background-color: #6281a7;
+        border-radius: 1px;
+        color: white;
+        text-align: center;
+        font-size: 22.5px
+    }
+    td{
+        color: #242E35;
+    }
+    .header th{
+        padding: 10px;
+    }
+    #contentt {
+      height: 650px;
+      overflow: auto;
+    }
+
+</style>
+  <div id="contentt">
+    <h2 style="text-align: center; color: #6281a7; margin-top: 3px; margin-bottom: 3px;">Void Patients  -  <%= params[:end_date].to_date.strftime("%d-%b-%Y")%> : <%= params[:end_date].to_date.strftime("%d-%b-%Y")%></h2>
+        <table id="stats2" style="margin-bottom: 8px;" cellpadding="5" width="90%">
+          <tr style="color: #fff; background-color: #6281a7;">
+                <th class="header" style="width:1%;padding: 3px;">#</th>
+                <th class="header" style="width:22%">Patient Name</th>
+                <th class="header" style="width:16%">DOB</th>
+                <th class="header" style="width:16%">Gender</th>
+                <th class="header" style="width:16%">National ID</th>
+                <th></th>
+                <th></th>
+
+        </tr>
+        <% count =1 %>
+        <%@patients.each do |p| %>
+        
+            <tr id="<%= p['patient_id'] %>">
+            <td class="header" style="width:1%;padding: 3px;"><%=count%></td>
+            <td style="width:22%"><%=p["name"]%></td>
+            <td style="width:16%"><%=p["dob"]%></td>
+            <td style="width:16%"><%=p["gender"]%></td>
+            <td style="width:16%"><%=p["npid"]%></td>
+            <td style="width:16%" onclick="voidPatient('<%= p['patient_id'] %>')" class="btn blue button" ><span>Void</span></td>
+            <td style="width:16%" onclick="loadVisit('<%= p['patient_id'] %>', '<%= p["date"]%>')" class="btn blue button" ><span>Load Visit</span></td>
+            <% count = count + 1 %>
+
+        </tr>
+        <%end%>
+      </table>
+    </div>
+  </div>
+<script type="text/javascript">
+  var height = 0.7 * window.innerHeight;
+  if ($("#stats").height() > height){
+      $(".div_scroll").css({"height":height,"overflow-y":"scroll"});
+    }
+
+  var confirmation = null;
+  var confirmationTimeout = null;
+
+  function voidPatient(patient_id){
+
+      confirmYesNo("Are you sure you want to void patient?", function(){
+          hideConfirmation();
+          jQuery.ajax({
+              type: 'get',
+              url: "/patients/void_patient/" + patient_id,
+              success: function(res){
+                  if(res == 'Ok') {
+                      jQuery("#" + patient_id).remove();
+                  }else{
+                      showMessage("Something went wrong!");
+                  }
+              },
+              error: function(){
+                  showMessage("Something went wrong!");
+              }
+          })
+
+      }, function(){
+          hideConfirmation();
+      });
+  }
+
+  function confirmYesNo(message, yes, no) {
+      hideConfirmation();
+      if (confirmation == null) {
+          confirmation = document.createElement("div");
+          confirmation.setAttribute('id', 'confirmation');
+          confirmation.setAttribute('style', 'display:none');
+          confirmation.style.left = "50%";
+          confirmation.style.marginLeft = "-225px";
+          confirmation.style.width = "450px";
+          confirmation.style.position = "absolute";
+          confirmation.style.top = "30%";
+          confirmation.style.fontSize = "2em";
+          confirmation.style.textAlign = "center";
+          confirmation.style.backgroundColor = "tomato";
+          confirmation.style.zIndex = "999";
+
+          document.body.appendChild(confirmation);
+      }
+      confirmation.innerHTML = ''+
+              '<div class="confirmation" style="left:50%; margin-left: -225px; width: 450px; ' +
+              'position: absolute; top: 30%; font-size: 2em; text-align: center; ' +
+              'background-color: tomato; z-index: 999;">'+ message+ '<div>'+
+              '<button id="yes"><span>Yes</span></button>'+
+              '<button id="no"><span>No</span></button></div>'+
+              '</div>';
+      setTimeout(function() {
+          jQuery("#yes").mousedown(yes);
+          jQuery("#no").mousedown(no);
+      }, 300);
+
+      confirmation.setAttribute('style', 'display:block');
+      confirmationTimeout = window.setTimeout("hideConfirmation()", 20000);
+  }
+
+  function hideConfirmation(){
+      if (confirmation != null) confirmation.setAttribute('style', 'display:none');
+      if (confirmationTimeout != null) window.clearTimeout(confirmationTimeout);
+  }
+
+</script>
+<script language="javascript" type="text/javascript" src="/touchscreentoolkit/lib/javascripts/touchScreenToolkit.js" defer="true"></script>

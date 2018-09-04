@@ -1,0 +1,59 @@
+
+<% form_tag :controller => 'clinic', :action => "enable_dde2", :id => 'dde2', :method => 'POST' do %>
+    <%= select_tag("create_from_dde2", options_for_select(['', 'Yes', 'No']),
+       {       :id => 'dde2',
+               :helpText => "Create patients from DDE2"
+        }) %>
+
+    <%= select_tag("dde_server_protocol", options_for_select(['', 'http', 'https']),
+       {
+               :helpText => "DDE2 server protocol",
+               :condition => "__$('dde2').value == 'Yes'"
+       }) %>
+
+    <%= text_field_tag("dde_server_ip", nil,
+       {
+               :helpText => "DDE2 server IP address",
+               :condition => "__$('dde2').value == 'Yes'",
+               :field_type => 'number',
+               :tt_pageStyleClass => 'Numeric NumbersOnlyWithDecimal'
+       }) %>
+
+    <%= text_field_tag("dde_server_port", nil,
+       {
+               :id => 'port',
+               :helpText => "DDE2 server IP port",
+               :condition => "__$('dde2').value == 'Yes'",
+               :field_type => 'number',
+               :tt_pageStyleClass => 'Numeric NumbersOnly'
+       }) %>
+
+    <%= text_field_tag("dde_server_username", nil,
+       {
+               :id => 'port',
+               :textCase => "lower",
+               :field_type => "normal",
+               :helpText => "DDE2 server username",
+               :condition => "__$('dde2').value == 'Yes'"
+       }) %>
+    <%= text_field_tag("dde_server_password", nil,
+       {
+               :id => 'port',
+               :field_type => 'password',
+               :helpText => "DDE2 server password",
+               :condition => "__$('dde2').value == 'Yes'"
+       }) %>
+
+<% end %>
+
+<script>
+    interval = window.setInterval(
+        function(){
+            if(__$('dde2').value == 'No' || (tstCurrentPage == (tstPages.length -1))){
+                __$('nextButton').innerHTML = "<span>Finish</span>";
+            }else{
+                __$('nextButton').innerHTML = "<span>Next</span>";
+            }
+        }, 250
+    );
+</script>

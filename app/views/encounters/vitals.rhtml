@@ -1,5 +1,5 @@
 <script type="text/javascript" language="javascript">
-  <!--
+
   tt_cancel_show = "/patients/show/<%= @patient.id %>";
   tt_cancel_destination = "/patients/show/<%= @patient.id %>";
 </script>
@@ -22,6 +22,10 @@
   #sys, #dia {
     position: absolute;
     font-size: 22px;  
+  }
+
+  .statusLabel {
+    top: 135px !important;
   }
 
   .lowWeightForHeight{color:black;background:red;}
@@ -64,7 +68,7 @@
   function $(e) {
     return document.getElementById(e);
   }
- 
+
   function growthIndicators(){
     //These values pulled from the tt_onLoad bit in the third form...
     try{
@@ -84,12 +88,12 @@
       showWeightHeightForAge();
       showWeightForHeight();
     }
-    
+
     document.getElementById('inputFrame'+tstCurrentPage).innerHTML = '<div id="summary">' + displayText + '</div><div id="charts" style="height:185px;margin:2px 6px 6px;padding:2px;width:380px;"></div>' ;
     //alert(fisrt)
-    if (first == "false"){
+    //if (first == "false"){
       jQuery('#charts').empty().load('/patients/graphs/<%= @patient.id -%>?data=weight&currentWeight=' + currentWeight);
-    }
+    //}
   }
         
   function showWeightHeightForAge(){
@@ -145,10 +149,10 @@
 
 
 
-    displayText = "<div style='padding: 10px; font-size:18px;'><table width='100%'><tr valign='top'><td><table width='50%'><tr><th>Current Vitals </th></tr>";
+    displayText = "<div style='padding: 10px; font-size:18px;'><table width='100%'><tr valign='top'><td><table width='50%'><tr><th style='text-align: left;'>Current Vitals </th></tr>";
 
-    displayText += "<tr><td>Weight :" + currentWeight + " Kg</td></tr>";
-    displayText += "<tr><td>Height :" + currentHeight + " Cm</td></tr>";
+    displayText += "<tr><td>Weight :  " + currentWeight + " Kg</td></tr>";
+    displayText += "<tr><td>Height :  " + currentHeight + " Cm</td></tr>";
     displayText += "<tr><td><span class='title'>BMI:</span>";
     if (currentBmi > 40.0) {
       displayText += "<span class=''>" + currentBmi + "</span></td></tr>" +
@@ -189,17 +193,9 @@
   var alreadyNoted = false;
 
   function calculateBP(){
-
-    if (__$("sys").className == "gray"){
-      __$("systolic_blood_pressure").value = __$("touchscreenInput" + tstCurrentPage).value;
-    }
-
-    if (__$("dia").className == "gray"){
-      __$("diastolic_blood_pressure").value = __$("touchscreenInput" + tstCurrentPage).value;
-    }
     
     var sb = $("systolic_blood_pressure").value;
-    var db = $("diastolic_blood_pressure").value;
+    var db = __$("touchscreenInput" + tstCurrentPage).value;
 
     if (sb == "Unknown" || db == "Unknown"){
       $("systolic_blood_pressure").value = "Unknown";
@@ -237,7 +233,7 @@
       alreadyNoted = false;
     }
       
-    $("bp").innerHTML = "Blood Pressure: <i style='font-size: 1.2em; float: right;'>" + bp + "</i>" + txt;
+    $("bp").innerHTML = txt;
        
     timedEvent = setTimeout('calculateBP()', 100);
   }
@@ -246,7 +242,7 @@
 
     var conceptName = conceptHash[tstCurrentPage]
     conceptName = (parsedConceptName && parsedConceptName.length > 1) ? parsedConceptName : conceptName;
-       
+
     try{
       conceptName = conceptName.charAt(0).toUpperCase() + conceptName.slice(1).toLowerCase();
       if(__$("messageBar") && !__$("messageBar").innerHTML.match(conceptName)){
@@ -318,44 +314,45 @@
     }
     setTimeout('checkText(' + pos + ')', 500);
   }
+
   function addKeys(){
 
-    __$("nextButton").onmousedown = function(){
+      __$("nextButton").onmousedown = function(){
 
-      if(__$("systolic_blood_pressure").value == ""){
-        showMessage("Enter systolic blood pressure!");
-      }else if(__$("diastolic_blood_pressure").value == ""){
-        showMessage("Enter diastolic blood pressure!");
-      }else{
-
-        if (__$("systolic_blood_pressure").value > 300){
-          showMessage("Systolic blood pressure greater than maximum 300");
-        }else if (__$("diastolic_blood_pressure").value > 250){
-          showMessage("Diastolic blood pressure greater than maximum 250");
+        if(__$("systolic_blood_pressure").value == ""){
+          showMessage("Enter systolic blood pressure!");
+        }else if(__$("diastolic_blood_pressure").value == ""){
+          showMessage("Enter diastolic blood pressure!");
         }else{
-          gotoNextPage();
+
+          if (__$("systolic_blood_pressure").value > 300){
+            showMessage("Systolic blood pressure greater than maximum 300");
+          }else if (__$("diastolic_blood_pressure").value > 250){
+            showMessage("Diastolic blood pressure greater than maximum 250");
+          }else{
+            gotoNextPage();
+          }
         }
       }
-    }
        
-    keyboard = document.getElementById('keyboard')
-    keyboard.innerHTML+= getButtonString('dia','Switch to diastolic')
-    keyboard.innerHTML+= getButtonString('sys','Switch to systolic')
-    dia  = document.getElementById('dia')
-    sys  = document.getElementById('sys')
+      keyboard = document.getElementById('keyboard')
+      keyboard.innerHTML+= getButtonString('dia','Switch to diastolic')
+      keyboard.innerHTML+= getButtonString('sys','Switch to systolic')
+      dia  = document.getElementById('dia')
+      sys  = document.getElementById('sys')
 
-	sys.style.bottom = (__$("keyboard").offsetHeight - 73)+ "px";	
-	sys.style.marginLeft = (0.33 * screen.width) + "px";
-	sys.style.maxWidth = "250px";
-	
-    dia.style.bottom = (__$("keyboard").offsetHeight - 73)+ "px";
-    dia.style.maxWidth = "250px"; 
-	dia.style.marginLeft = (0.33 * screen.width + 300) + "px"
-	
-    dia.setAttribute('onmousedown', 'changeSelected("dia")')
-    dia.setAttribute('class', 'green')
-    sys.setAttribute('onmousedown', 'changeSelected("sys")')
-    sys.setAttribute('class', 'gray')
+    	sys.style.bottom = (__$("keyboard").offsetHeight - 73)+ "px";	
+    	sys.style.marginLeft = (0.33 * screen.width) + "px";
+    	sys.style.maxWidth = "250px";
+    	
+        dia.style.bottom = (__$("keyboard").offsetHeight - 73)+ "px";
+        dia.style.maxWidth = "250px"; 
+    	dia.style.marginLeft = (0.33 * screen.width + 300) + "px"
+  	
+      dia.setAttribute('onmousedown', 'changeSelected("dia")')
+      dia.setAttribute('class', 'green')
+      sys.setAttribute('onmousedown', 'changeSelected("sys")')
+      sys.setAttribute('class', 'gray')
   }
   
   function changeSelected(selected){
@@ -393,6 +390,122 @@
     __$('diastolic_blood_pressure').value = "";
     __$('bp').innerHTML = "";
   }
+
+  function addDecimal(){
+    value = __$('touchscreenInput' + tstCurrentPage).value;
+    if (value % 1 == 0){
+      __$('weight').value = __$('touchscreenInput' + tstCurrentPage).value+".0";
+    }
+  }
+
+  var sbpInterval;
+  var dbpInterval;
+  var currentSBPValue;
+  var currentDBPValue;
+
+  function updateSBPValues(){
+    sbpInterval = window.setInterval("updateSBP()", 200);
+  }
+
+  function updateDBPValues(){
+    dbpInterval = window.setInterval("updateDBP()", 200);
+  }
+
+  function updateSBP(){
+    currentSBPValue = jQuery('#touchscreenInput'+ tstCurrentPage)[0].value;
+    if (currentSBPValue.length === 0) currentSBPValue = '&nbsp;'
+    jQuery("#helpText" + tstCurrentPage + ">#sbp").html(currentSBPValue);
+  }
+
+  function updateDBP(){
+    currentDBPValue = jQuery('#touchscreenInput'+ tstCurrentPage)[0].value;
+    if (currentDBPValue.length === 0) currentDBPValue = '&nbsp;'
+    jQuery("#helpText" + tstCurrentPage + ">#sbp").html(currentSBPValue);
+    jQuery("#helpText" + tstCurrentPage + ">#dbp").html(currentDBPValue);
+  }
+
+  function updateAbsoluteMaxValue(){
+    sbpValue = currentSBPValue //jQuery('#systolic_blood_pressure')[0].value;
+    sbpValue = (parseInt(sbpValue) - 10); //DBP has to be less than SPB at least by 10.
+    jQuery('#touchscreenInput'+ tstCurrentPage).attr("absoluteMax", sbpValue);
+    console.log(sbpValue);
+  }
+
+  function patientComplication(sb, db){
+    var res = "";
+    if(sb != null || db != null){
+        res = (sb > 180) || (db > 110) ?
+              "Emergency Care Needed" : ((sb >= 160 && sb <= 180) || (db >= 100 && db <= 110) ?
+              "Hypertension Stage 2" : ((sb >= 140 && sb <= 159) || (db >= 90 && db <= 99)?
+              "Hypertension Stage 1" : ((sb >= 120 && sb <= 139) || (db >= 80 && db <= 89) ?
+              "Prehypertension" : "")));
+    }
+
+    return res;
+  }
+
+  function _foo(){
+
+    var sb = __$("systolic_blood_pressure").value;
+    var db = __$("touchscreenInput" + tstCurrentPage).value;
+
+    if (sb == "Unknown" || db == "Unknown"){
+      $("systolic_blood_pressure").value = "Unknown";
+      $("diastolic_blood_pressure").value = "Unknown";
+      $("blood_pressure").value = ""
+      gotoPage(tstCurrentPage + 1);
+    }
+
+    /*var complication = (sb > 180) || (db > 110) ?
+       "Emergency Care Needed" : ((sb >= 160 && sb <= 180) || (db >= 100 && db <= 110) ?
+      "Hypertension Stage 2" : ((sb >= 140 && sb <= 159) || (db >= 90 && db <= 99)?
+      "Hypertension Stage 1" : ((sb >= 120 && sb <= 139) || (db >= 80 && db <= 89) ?
+      "Prehypertension" : ""))); */
+
+    var complication = patientComplication(sb,db);
+
+    var txt = "<div style='color:red;width:100%;text-align:center;' id='bpFlag'><i style='float=right;align:center;'>" + complication + "</i></div>";
+    
+    if(!$('bp')){
+      var div = document.createElement("div");
+      div.id = "bp";
+      div.style.height = "13%";
+      div.className = "statusLabel";
+
+      $("inputFrame" + tstCurrentPage).appendChild(div);
+    }
+
+    var bp = ((sb > 0 ? sb.trim() : "?") + 
+      "/" + (db > 0 ? db.trim() : "?"));
+    
+    var bp = (sb || "?") + "/" + (db || "?");
+    
+    if(alreadyNoted == false){
+
+      if(sb > 140 || db > 90) {
+        
+        showMessage('Client is at risk of pre-eclampsia. Please refer her for Urine Protein Test.',false,false);
+        alreadyNoted = true;
+      }
+    } 
+    
+    $("bp").innerHTML = txt;
+       
+    timedEvent = setTimeout('_foo()', 500);
+  }
+
+  function weightLossPercent(currentWeight){
+    /*Decrease = Original Number - New Number
+    //%Decrease = Decrease ÷ Original Number × 100
+    If your answer is a negative number then this is a percentage increase.
+    Find more at: http://www.skillsyouneed.com/num/percent-change.html#ixzz4TIacWujf
+     */
+    decrease = parseFloat(previousWeight) - parseFloat(currentWeight);
+    weight_loss_percent = (decrease/previousWeight) * 100;
+    return Math.round(weight_loss_percent);
+
+  }
+
 </script>
 
 <form action="/encounters/create/vitals">
@@ -432,26 +545,24 @@
 
   <% if current_user.activities.include?("Weight and Height") %>
     <% if params[:weight] %>
-
-
-      <%= text_field_tag "observations[][value_coded_or_text]", nil,
-        {:id => "weight",
-        :field_type => 'number',
-        :min => 40,
-        :max => 200,
-        :absoluteMin => 20,
-        :absoluteMax => 200,
-        :condition => "if(#{options.length} > 2){getSelected().match(/Weight/)}else{true}",
-        :tt_onLoad => "parsedConceptName = 'Weight'; if(conceptHash){}else{transformMessages()};timedEvent = setTimeout('checkText(1)', 100);",
-        :tt_onUnLoad => "parsedConceptName = ''",
-        :units => 'kg',
-        :validationRule => "([0-9]+(\\.[0-9]))|Unknown$",
-        :validationMessage => "You must enter a valid decimal number",
-        :tt_pageStyleClass => "NumbersWithUnknownAndDecimal",
-        :helpText => "Weight (Kg) <span class='helper'> Vitals</span>"} %>
-      <%= hidden_field_tag("observations[][concept_name]", "WEIGHT (KG)") %>
-      <%= hidden_field_tag("observations[][patient_id]", @patient.id) %>
-      <%= hidden_field_tag("observations[][obs_datetime]", session_date) %>
+          <%= text_field_tag "observations[][value_coded_or_text]", nil,
+               {:id => "weight",
+                :field_type => 'number',
+                :min => 40,
+                :max => 84,
+                :absoluteMin => 30,
+                :absoluteMax => 100,
+                :condition => "if(#{options.length} > 2){getSelected().match(/Weight/)}else{true}",
+                :tt_onLoad => "parsedConceptName = 'Weight'; if(conceptHash){}else{transformMessages()};",#timedEvent = setTimeout('checkText(1)', 100);",
+                :tt_onUnLoad => "parsedConceptName = ''",
+                :units => 'kg',
+                :validationRule => "(^[+-]?([0-9]*[.])?[0-9]+$)|Unknown$",
+                :validationMessage => "You must enter a valid number",
+                :tt_pageStyleClass => "NumbersWithUnknownAndDecimal",
+                :helpText => "Weight (Kg) <span class='helper'> Vitals</span>"} %>
+          <%= hidden_field_tag("observations[][concept_name]", "WEIGHT (KG)") %>
+          <%= hidden_field_tag("observations[][patient_id]", @patient.id) %>
+          <%= hidden_field_tag("observations[][obs_datetime]", session_date) %>
 
     <% end %>
 
@@ -494,23 +605,31 @@
 
   <% if current_user.activities.include?("BP") %>
     <% if params[:bp] %>
+      <%= touch_text_field_tag "SYSTOLIC BLOOD PRESSURE", @patient, nil,{
+        :id => "systolic_bp",
+        :field_type => "number",
+        :tt_onLoad =>  "updateSBPValues();",
+        :tt_onUnLoad => "parsedConceptName = ''; clearTimeout(timedEvent); clearInterval(sbpInterval);",
+        :helpText => "Systolic blood pressure (<span id='sbp'>&nbsp;</span>/<span id='dbp'>&nbsp;</span>)",
+        :absoluteMin => 70,
+        :absoluteMax => 250,
+        :validationRule => "^([0-9]+)|Unknown$",
+        :validationMessage => "You must enter numbers only (for example 157)",
+        :tt_pageStyleClass => "KeyboardNumeric NumbersWithUnknown" } %>
 
-      <% options = default.merge({
-          :id => "blood_pressure",
-          :helptext => "Blood Pressure (systolic)<span class='helper'> Vitals</span>",
-          :field_type => "number",
-          :tt_pageStyleClass => "NumbersWithUnknown",
-          :tt_onLoad => "timedEvent = setTimeout('calculateBP()', 100);addKeys();",
-          :tt_onUnLoad => "parsedConceptName = ''; clearTimeout(timedEvent);",
-          :absoluteMin => 1,
-          :condition => "if(#{options.length} > 2){getSelected().match(/BP/)}else{true}",
-        }) %>
 
-      <%= text_field_tag("observations[][value_coded_or_text]", nil,options) %>
-      <%= hidden_field_tag("observations[][concept_name]",  "BLOOD PRESSURE",
-        {:id => 'blood_pressure_concept_name'}) %>
-      <%= hidden_field_tag("observations[][patient_id]",    @patient.id) %>
-      <%= hidden_field_tag("observations[][obs_datetime]",  session_date) %>
+      <%= touch_text_field_tag "DIASTOLIC BLOOD PRESSURE", @patient, nil,{
+        :id => "diastolic_blood_pressure",
+        :tt_onLoad => "calculateBP(); updateDBPValues(); updateAbsoluteMaxValue();",
+        :tt_onUnLoad => "clearTimeout(timedEvent);clearInterval(dbpInterval);",
+        :field_type => "number",
+        :helpText => "Diastolic blood pressure (<span id='sbp'>&nbsp;</span>/<span id='dbp'>&nbsp;</span>)",
+        :absoluteMin => 30,
+        :validationRule => "^([0-9]+)|Unknown$",
+        :validationMessage => "You must enter numbers only (for example 157)",
+        :tt_pageStyleClass => "Keyboard Numeric  NumbersWithUnknown",
+        :condition => "__$('systolic_bp').value !== 'Unknown';"
+} %>
 
     <% end %>
 

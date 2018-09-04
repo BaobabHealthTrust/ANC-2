@@ -160,7 +160,7 @@ function generateHomepage(){
 
     // datenow = datenow.getFullYear() + "/" + (datenow.getMonth() + 1) + "/" + datenow.getDate();
 
-    datenow = datenow.getDate() + "-" + months[(datenow.getMonth())] + "-" + datenow.getFullYear();
+    datenow = datenow.getDate() + "/" + months[(datenow.getMonth())] + "/" + datenow.getFullYear();
 
     var login = document.createElement("div");
     login.id = "login";
@@ -171,7 +171,7 @@ function generateHomepage(){
         var date = __$("date").innerHTML.trim().match(/^(\d{4})(\/|-)(\d{2})(\/|-)(\d{2})/);
 
         if(date){
-            current_date = eval(date[5]) + "-" + months[eval(date[3]) - 1] + "-" + date[1];
+            current_date = eval(date[5]) + "/" + months[eval(date[3]) - 1] + "/" + date[1];
         }
     }
 

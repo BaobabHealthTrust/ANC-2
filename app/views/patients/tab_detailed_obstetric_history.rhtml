@@ -54,7 +54,7 @@
             Place
           </th>
           <th>
-            Gestation (months)<sup>*</sup>
+            Gestation (Weeks)<sup>*</sup>
           </th>
           <th>
             Delivery method
@@ -77,7 +77,8 @@
 ["YEAR OF BIRTH", "PLACE OF BIRTH", "PREGNANCY", "LABOUR DURATION", 
 "METHOD OF DELIVERY", "CONDITION AT BIRTH", "BIRTH WEIGHT", "ALIVE", "AGE AT DEATH"]      
 %>
-        <% (1..(@obstetrics.length + 1)).each do |pos| %>
+        <% #raise @obstetrics.inspect %>
+        <% (1..(@obstetrics.length)).each do |pos| %>
           <tr>
             <td>
               <%= pos %>

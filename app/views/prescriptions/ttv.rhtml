@@ -45,7 +45,10 @@
   <%= hidden_field_tag "encounter[encounter_datetime]", session[:datetime] ||=  DateTime.now() %>
   <%= hidden_field_tag "encounter[provider_id]", session[:user_id] %>
   
-  <select id="ttv" name="ttv"  tt_onLoad = "transformMessages();" tt_onUnLoad="checkForm()" helpText="Has TTV been given today?  <span class='helper'> Prescription</span>">
+  <select id="ttv" name="ttv"
+          tt_onLoad = "transformMessages();"
+          tt_onUnLoad="checkForm()"
+          helpText="TTV has been given today  <span class='helper'> Prescription</span>">
     <option>Yes</option>
     <option>No</option>
   </select>

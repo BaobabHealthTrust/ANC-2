@@ -88,11 +88,11 @@ div { -moz-user-select: none; }
     <td class="color_<%=color%> row_number_<%=row_number%>" style="text-align:center;"><%= patient.sex || '&nbsp;' %></td>
     <td class="color_<%=color%> row_number_<%=row_number%>" style="text-align:center;"><%= patient.age || '&nbsp;' %> </td>
     <td class="color_<%=color%> row_number_<%=row_number%>">
-	<% if @selected_identifier != patient.national_id %>
-      <a href="#" id = '<%=patient.patient_id%>' class ='merge button_row_<%=row_number%>' onmousedown="postToSelect('<%=patient.national_id%>');">Select</a>
-	<%else%>
+	<!--% if @selected_identifier != patient.national_id %>
+      <a href="#" id = '< %=patient.patient_id%>' class ='merge button_row_< %=row_number%>' onmousedown="postToSelect('< %=patient.national_id%>');">Select</a>
+	< %else%-->
       <a href="#" id = '<%=patient.patient_id%>' class ='merge button_row_<%=row_number%>' onmousedown="newID('<%=patient.person_id%>','<%=patient.national_id%>');">Select</a>
-	<%end%>
+	<!--%end% -->
     </td>
   </tr>
  <%end%>

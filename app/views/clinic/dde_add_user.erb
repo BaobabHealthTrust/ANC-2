@@ -1,0 +1,25 @@
+<form action="/clinic/dde_add_user" method="POST">
+  <%= text_field_tag 'location', '', {
+    :id => 'location',
+    :field_type => 'alpha',
+    :helpText => 'Select location',
+    :ajaxURL => '/clinic/get_dde_locations?name='
+  } 
+  %>
+
+  <%= text_field_tag "username", "",
+    {
+    :textCase => "lower",
+    :field_type => "password",
+    :helpText => 'Username'
+    }
+   %>
+
+  <%= text_field_tag "password", "",
+    {
+    :textCase => "lower",
+    :field_type => "password",
+    :helpText => 'Password'
+  }  %>
+
+</form>

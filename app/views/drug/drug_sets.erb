@@ -256,8 +256,7 @@
                   <tr >
                     <td colspan="3" style="border: hidden;padding-left: 2%; margin-top: 5%; font-size: 19px; font-weight: bold;">
                       <% image = @status[set_id].match("inactive") ? "unticked" : "ticked" %>
-                      <div style="margin-top: 12px;"><div  style="margin-bottom: -5vh"> <img id ="img<%= set_id %>" onclick = "updateStatus('<%= set_id %>', '<%= @status[set_id] %>')" src="/images/<%= image%>.jpg" height="43"
-                                                                                             alt="select" /> </div> <div style=" height: 5vh; padding-left: 5%; padding-top: 1vh;">&nbsp<%=  @set_name_ids_map[set_id] + "  (" + @set_desc_ids_map[set_id] + ")"%></div>
+                      <div style="margin-top: 12px;"><div  style="margin-bottom: -5vh"> <img id ="img<%= set_id %>" onclick = "updateStatus('<%= set_id %>', '<%= @status[set_id] %>')" src="/images/<%= image%>.jpg" height="43" alt="select" /> </div> <div style=" height: 5vh; padding-left: 5%; padding-top: 1vh;">&nbsp<%=  @set_name_ids_map[set_id] + "  (" + @set_desc_ids_map[set_id] + ")"%></div>
                       </div>
                     </td>
                     <td colspan="2" style="width: 8%; padding-left:2.5%; border: hidden;  height: 5vh;">
@@ -286,7 +285,12 @@
                         <%= data.frequency %> &nbsp;
                       </td>
                       <td style="text-align: center;">
-                        <%= data.duration %>  days&nbsp;
+                        <%= data.duration %>
+                        <% if data.duration.to_i == 1 %>
+                          day&nbsp;
+                        <% else %>
+                          days&nbsp;
+                        <%end %>
                       </td>
                       <td style="width: 13%; text-align: center;">
                         <%= (User.find(data.creator).name || 'admin') rescue data.creator %>
