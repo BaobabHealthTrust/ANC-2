@@ -65,12 +65,12 @@
     arv_number      = @arv_number rescue nil
     start_date      = @art_start_date rescue nil
     today           = session[:datetime].blank? ? Date.today : session[:datetime]
-     
-    prev_hiv_status = ""
-    prev_art_status = ""
-    prev_start_date = ""
-    prev_arv_number = ""
-
+        
+    prev_hiv_status = @hiv_status rescue nil
+    prev_art_status = @on_art rescue nil
+    prev_start_date = @art_start_date rescue nil
+    prev_arv_number = @arv_number rescue nil
+=begin
     new_hiv_status  = ""
     new_art_status  = ""
     new_arv_number  = ""
@@ -97,7 +97,7 @@
       prev_start_date = @art_start_date rescue nil
       prev_arv_number = @arv_number rescue nil
     end
-
+=end
     @available_test_results = [
       ["HB", "HB Test Result"],["Syphilis", "Syphilis Test Result"],
       ["Urine", "Urine Test Results"],["Malaria", "Malaria Test Result"],
@@ -495,7 +495,7 @@ function remoteARTStatus(){
                       }
    %>
 
-  <!-- % if params[:update].blank? % -->
+  <% if @hiv_status.blank? %>
 
   <%= touch_select_tag "Previous HIV Test done", @patient, 
     options_for_select([["", ""],["Yes", "Yes"],["No", "No"]]),
@@ -503,9 +503,7 @@ function remoteARTStatus(){
       :id => "previous_hiv_test",
       :helptext => "Previous HIV Test Done <span class='helper'> Lab Results</span>",
       :tt_onUnLoad => "parsedConceptName = '';",
-      :tt_onLoad => "parsedConceptName = 'Previous HIV Test'; __$('backButton').style.display = 'none';
-        alertStatus();",
-      :condition => "#{@hiv_status.blank?}"
+      :tt_onLoad => "parsedConceptName = 'Previous HIV Test'; __$('backButton').style.display = 'none';"
 
     }
   %>
@@ -513,26 +511,151 @@ function remoteARTStatus(){
   <%= touch_select_tag "Previous HIV Test Results", @patient,
     options_for_select([["", ""],["Negative", "Negative"],
       ["Positive", "Positive"],["Inconclusive", "Inconclusive"],
-      ["Unknown", "Unknown"]], prev_hiv_status ),
+      ["Unknown", "Unknown"]] ),
     {
       :id => "prev_hiv_test_results",
       :helptext => "Previous HIV Test Results <span class='helper'> Lab Results</span>",
       :tt_onUnLoad => "parsedConceptName = '';",
-      :tt_onLoad => "parsedConceptName = 'Previous HIV Test Results'; alertARTStatus();",
-      :condition => "#{@hiv_status.blank?} || __$('previous_hiv_test').value == 'Yes'"
+      :tt_onLoad => "parsedConceptName = 'Previous HIV Test Results';",
+      :condition => "__$('previous_hiv_test').value == 'Yes'"
     }
   %>
 
-  <%= touch_date_tag "Previous HIV Test date", @patient, prev_start_date,
+  <%= touch_date_tag "Previous HIV Test date", @patient, nil,
     {
       :id => "prev_hiv_test_date",
       :helptext => "Previous HIV Test Date <span class='helper'> Lab Results</span>",
       :tt_onUnLoad => "parsedConceptName = '';",
       :tt_onLoad => " parsedConceptName = 'Previous HIV Test date';
         initializeDate();",
-      :condition => "(#{@hiv_status.blank?} && #{!@art_start_date.blank?}) || 
-      (__$('prev_hiv_test_results').value != '' || __$('previous_hiv_test').value == 'Yes')",
+      :condition => "__$('prev_hiv_test_results').value != '' || 
+      __$('previous_hiv_test').value == 'Yes'",
       :absoluteMax => "#{(session[:datetime].to_date - 1.days) rescue (Date.today - 1.days)}"
+    }
+  %>
+
+    <%= touch_select_tag "On ART", @patient,
+      options_for_select([["", ""],["Yes", "Yes"],
+        ["No", "No"]], art_status),
+      {
+        :id => "on_art",
+        :helptext => "Is Patient On ART? <span class='helper'> Lab Results</span>",
+        :tt_onUnLoad => "parsedConceptName = '';",
+        :tt_onLoad => " parsedConceptName = 'On ART';",
+        :condition => "__$('new_test_result_at_current_facility').value == 'Positive'
+         || __$('prev_hiv_test_results').value == 'Positive'"
+                         }
+    %>
+
+    <%= touch_text_field_tag "ARV Number", @patient, arv_number,
+      {
+        :id => "arv_number",
+        :optional => true,
+        :helptext => "ARV Number <span class='helper'> Lab Results</span>",
+        :tt_onUnLoad => "parsedConceptName = '';",
+        :condition => "__$('on_art').value == 'Yes'"
+      }
+    %>
+
+    <%= select_tag("choice",
+      options_for_select([["", ""],["", ""],
+        ["HB", "HB Test Result"],["Syphilis", "Syphilis Test Result"],
+        ["Urine", "Urine Test Results"],["Malaria", "Malaria Test Result"],
+        ["Blood Group", "Blood Group Test Result"]], ["", ""]),
+      {
+        :helpText => "New Test Results Available Today <span class='helper'> Lab Results</span>",
+        :id => "choice",
+        :multiple => true,
+        :optional => :true,
+        :condition => "__$('previous_hiv_test').value == 'Yes' && (__$('prev_hiv_test_results').value == 'Positive' || !checkHIVTestDate());",
+        :tt_onLoad => "__$('test_date').value = '';"
+      })
+    %>
+
+    <%= select_tag("choice",
+      options_for_select([["", ""],["", ""],
+        ["HIV", "HIV Test Result"],["HB", "HB Test Result"],
+        ["Syphilis", "Syphilis Test Result"],["Urine", "Urine Test Results"],
+        ["Malaria", "Malaria Test Result"],
+        ["Blood Group", "Blood Group Test Result"]], ["", ""]),
+      {
+        :helpText => "New Test Results Available Today <span class='helper'> Lab Results</span>",
+        :id => "choice1",
+        :multiple => true,
+        :optional => :true,
+        :condition => "__$('previous_hiv_test').value == 'No' || (__$('prev_hiv_test_results').value == 'Negative' && checkHIVTestDate());"
+      })
+    %>
+
+    <%= touch_select_tag "HIV status", @patient,
+      options_for_select([["", ""],["Negative", "Negative"],
+        ["Positive", "Positive"],["Inconclusive", "Inconclusive"],
+        ["Not Done", "Not Done"]]),
+      {
+        :id => "new_test_result_at_current_facility",
+        :helptext => "HIV Test Result <span class='helper'> Lab Results</span>",
+        :tt_BeforeUnload => "checkHIVTestUnknown();",
+        :tt_onUnLoad => "parsedConceptName = '';",
+        :tt_onLoad => "parsedConceptName = 'HIV Status'; ",
+        :condition => "getSelected().match(/HIV/)"
+      }
+  %>
+
+  <%= touch_select_tag "On ART", @patient,
+      options_for_select([["", ""],["Yes", "Yes"],
+        ["No", "No"]], art_status),
+      {
+        :id => "new_on_art",
+        :helptext => "Is Patient On ART? <span class='helper'> Lab Results</span>",
+        :tt_onUnLoad => "parsedConceptName = '';",
+        :tt_onLoad => " parsedConceptName = 'On ART'; alertARTStatus();",
+        :condition => "__$('new_test_result_at_current_facility').value == 'Positive'"
+                         }
+    %>
+
+    <%= touch_text_field_tag "ARV Number", @patient, nil,
+      {
+        :id => "arv_number",
+        :optional => true,
+        :tt_onLoad => 'alertARVNumber()',
+        :helptext => "ARV Number <span class='helper'> Lab Results</span>",
+        :tt_onUnLoad => "parsedConceptName = '';",
+        :condition => "__$('new_on_art').value == 'Yes'"
+      }
+    %>
+
+
+  <% else %>
+
+    <%= touch_text_field_tag "Previous HIV Test done", @patient, "Yes",
+      {
+        :id => "previous_hiv_test",
+        :helptext => "Previous HIV Test Done <span class='helper'> Lab Results</span>",
+        :tt_onUnLoad => "parsedConceptName = '';",
+        :tt_onLoad => "parsedConceptName = 'Previous HIV Test done'; __$('backButton').style.display = 'none';
+        alertStatus();"
+
+      }
+    %>
+  <%= touch_text_field_tag "Previous HIV Test Results", @patient, prev_hiv_status.first,
+    {
+      :id => "prev_hiv_test_results",
+      :helptext => "Previous HIV Test Results <span class='helper'> Lab Results</span>",
+      :tt_onUnLoad => "parsedConceptName = '';",
+      :tt_onLoad => "parsedConceptName = 'Previous HIV Test Results'; alertARTStatus();",
+      :condition => "__$('previous_hiv_test').value == 'Yes'"
+    }
+  %>
+
+  <%= touch_date_tag "Previous HIV Test date", @patient, "",
+    {
+      :id => "prev_hiv_test_date",
+      :helptext => "Previous HIV Test Date <span class='helper'> Lab Results</span>",
+      :tt_onUnLoad => "parsedConceptName = '';",
+      :tt_onLoad => " parsedConceptName = 'Previous HIV Test date';
+        initializeDate();",
+      :condition => "(__$('prev_hiv_test_results').value != '' || __$('previous_hiv_test').value == 'Yes')",
+      :absoluteMax => "#{(!@art_start.blank? ? @art_start.strftime("%Y-%m-%d") : (today - 1.days).strftime("%Y-%m-%d"))}"
     }
   %>
 
@@ -563,118 +686,23 @@ function remoteARTStatus(){
       options_for_select([["", ""],["", ""],
         ["HB", "HB Test Result"],["Syphilis", "Syphilis Test Result"],
         ["Urine", "Urine Test Results"],["Malaria", "Malaria Test Result"],
-        ["Blood Group", "Blood Group Test Result"]], ["", ""]),
+        ["Blood Group", "Blood Group Test Result"]]),
       {
         :helpText => "New Test Results Available Today <span class='helper'> Lab Results</span>",
         :id => "choice",
         :multiple => true,
-        :optional => true,
-        :condition => "#{!@hiv_status.blank?} || __$('previous_hiv_test').value == 'Yes' && (__$('prev_hiv_test_results').value == 'Positive' || !checkHIVTestDate());",
-        :tt_onLoad => ""
+        :optional => true
       })
     %>
 
-    <%= select_tag("choice",
-      options_for_select([["", ""],["", ""],
-        ["HIV", "HIV Test Result"],["HB", "HB Test Result"],
-        ["Syphilis", "Syphilis Test Result"],["Urine", "Urine Test Results"],
-        ["Malaria", "Malaria Test Result"],
-        ["Blood Group", "Blood Group Test Result"]], ["", ""]),
-      {
-        :helpText => "New Test Results Available Today <span class='helper'> Lab Results</span>",
-        :id => "choice1",
-        :multiple => true,
-        :optional => true,
-        :condition => "__$('previous_hiv_test').value == 'No' || (__$('prev_hiv_test_results').value == 'Negative' && checkHIVTestDate());"
-      })
-    %>
+  <%end%>
 
-  <!-- % else % -->
-
-    <!-- %= select_tag("choice",
-      options_for_select([["", ""],
-                                       ["", ""],
-                                       ["HB", "HB Test Result"],
-                                       ["Syphilis", "Syphilis Test Result"],
-                                       ["Urine", "Urine Test Results"],
-                                       ["Malaria", "Malaria Test Result"],
-                                       ["Blood Group", "Blood Group Test Result"]], ["", ""]),
-                   {
-                       :helpText => "New Test Results Available Today <span class='helper'> Lab Results</span>",
-                       :id => "choice",
-                       :multiple => true,
-                       :optional => true
-                   })
-    % -->
-
-    <!-- %= select_tag("choice",
-        options_for_select([["", ""],["", ""],
-          ["HIV", "HIV Test Result"],["HB", "HB Test Result"],
-          ["Syphilis", "Syphilis Test Result"],["Urine", "Urine Test Results"],
-          ["Malaria", "Malaria Test Result"],
-          ["Blood Group", "Blood Group Test Result"]], ["", ""]),
-        {
-          :helpText => "New Test Results Available Today <span class='helper'> Lab Results</span>",
-          :id => "choice",
-          :multiple => true,
-          :optional => true,
-          :condition => "__$('prev_hiv_test') == 'Negative' && checkHIVTestDate()"
-        })
-    % -->
-
-  <!-- %end% -->
-
-  <%= touch_select_tag "HIV status", @patient,
-      options_for_select([["", ""],["Negative", "Negative"],
-        ["Positive", "Positive"],["Inconclusive", "Inconclusive"],
-        ["Not Done", "Not Done"]], new_hiv_status ),
-      {
-        :id => "new_test_result_at_current_facility",
-        :helptext => "HIV Test Result <span class='helper'> Lab Results</span>",
-        :tt_BeforeUnload => "checkHIVTestUnknown();",
-        :tt_onUnLoad => "parsedConceptName = '';",
-        :tt_onLoad => "parsedConceptName = 'HIV Status'; alertStatus();",
-        :condition => "#{!@hiv_status.blank?} && getSelected().match(/HIV/);"
-      }
+  <!-- HIV Test date -->
+  <%= touch_hidden_tag "HIV test date", @patient, (!@hiv_status.blank?) ? "" : "#{today.to_date rescue Date.today}",
+    { 
+      :id => "test_date"
+    } 
   %>
-
-  <%= touch_select_tag "On ART", @patient,
-      options_for_select([["", ""],["Yes", "Yes"],
-        ["No", "No"]], new_art_status),
-      {
-        :id => "new_on_art",
-        :helptext => "Is Patient On ART? <span class='helper'> Lab Results</span>",
-        :tt_onUnLoad => "parsedConceptName = '';",
-        :tt_onLoad => " parsedConceptName = 'On ART'; alertARTStatus();",
-        :condition => "__$('new_test_result_at_current_facility').value == 'Positive'"
-                         }
-    %>
-
-    <%= touch_text_field_tag "ARV Number", @patient, "#{new_arv_number}",
-      {
-        :id => "arv_number",
-        :optional => true,
-        :tt_onLoad => " parsedConceptName = 'ARV Number'; alertARVNumber();",
-        :helptext => "ARV Number <span class='helper'> Lab Results</span>",
-        :tt_onUnLoad => "parsedConceptName = '';",
-        :condition => "__$('new_on_art').value == 'Yes';"
-      }
-    %>
-
-    <!-- HIV Test date -->
-  <%= touch_hidden_tag "HIV test date", @patient, (!@hiv_status.blank? && new_hiv_status.blank?) ? "" : today.to_date %>
-      
-      <!-- %= touch_date_tag "HIV test date", @patient, "",
-        {
-          :id => "enter_date_result_given",
-          :helptext => "Date HIV Test Done <span class='helper'> Lab Results</span>",
-          :tt_onUnLoad => "parsedConceptName = '';",
-          :tt_onLoad => " parsedConceptName = 'HIV Test date';initializeDate();",
-          :condition => "__$('new_test_result_at_current_facility').value != 'Not Done'
-                        && getSelected().match(/HIV/) !== null"
-        }
-      % -->
-
 
   <%= touch_text_field_tag "HB Test Result", @patient, nil,
                            {
