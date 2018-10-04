@@ -1446,7 +1446,7 @@ class PatientsController < ApplicationController
   end
 
   def exam_label
-    print_string = @anc_patient.examination_label rescue (raise "Unable to find patient (#{params[:patient_id]}) or generate an obstetric and medical history label for that patient")
+    print_string = @anc_patient.examination_label(session[:datetime]) rescue "Patient (#{params[:patient_id]}) results not available."
     send_data(print_string,:type=>"application/label; charset=utf-8", :stream=> false, :filename=>"#{params[:patient_id]}#{rand(10000)}.lbl", :disposition => "inline")
   end
 

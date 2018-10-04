@@ -53,7 +53,7 @@
   anc_visits.push("zero");
   var parsedConceptName = "Visit Number";
   
-    function disablePastVisits(){
+  function disablePastVisits(){
     console.log(anc_visits);
     for(var i = 0; i < anc_visits.length; i++){
       if(__$(anc_visits[i])){
@@ -63,7 +63,7 @@
     }
   }
 
-  setTimeout("disablePastVisits()", 200);
+  //setTimeout("disablePastVisits()", 200);
   
     </script>
     <%= stylesheet_link_tag "obstetric_history" %>

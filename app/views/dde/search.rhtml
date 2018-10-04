@@ -17,9 +17,12 @@
     :allowFreeText => true, 
     :condition => '$("family_name").value == "" || skipped[tstCurrentPage] == 1', 
     :tt_onLoad => 'seen(tstCurrentPage);' } %>
-
-    Gender: <%= f.select :gender, {"" => "", "Male" => "M", "Female" => "F"}, 
+  
+  <%= hidden_field_tag "person[gender]", "F" %>
+<!--
+    Gender: <#%= f.select :gender, {"" => "", "Male" => "M", "Female" => "F"}, 
     {:selected => params[:gender]}, {:id => 'gender', 
     :helpText => 'Gender' } %>
+-->
 
 <% end %>

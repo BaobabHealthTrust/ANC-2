@@ -166,6 +166,15 @@ class EncountersController < ApplicationController
       end
     end
 
+    ## Check if one of the surgical procedures is hysterectomy
+    if params[:encounter][:encounter_type_name].upcase == "SURGICAL HISTORY"
+      (params[:observations] || []).each do |ob|
+        if ob[:value_text].downcase.match(/hysterectom/)
+          redirect_to "/clinic/no_hysterectomy" and return
+        end
+      end
+    end
+
     redirect_to "/patients/print_history/?patient_id=#{@patient.id}" and return if (encounter.type.name.upcase rescue "") ==
       "SOCIAL HISTORY"
 
@@ -238,7 +247,7 @@ class EncountersController < ApplicationController
       end
       #@actual_array = periods.collect{|p| p if p > @weeks}
       #raise @actual_array.inspect
-      @days = @actual_array[0] * 7 rescue 0
+      @days = @actual_array[0] * 7 rescue ((@weeks * 7) + 7)
 
       if(@pregnancystart.blank?)
         lmp_value = (session[:datetime] ? session[:datetime].to_date : Date.today).strftime("%Y-%m-%d")
@@ -489,10 +498,13 @@ class EncountersController < ApplicationController
     unless params[:nonone]
       @procedure_done = @procedure_done.insert(0, @procedure_done.delete_at(@procedure_done.index("None")))
     end
-
+    
+    @patient = Patient.find(params[:patient_id])
+    gravida = ANCService::ANC.new(@patient).gravida
+    
     @procedure_done.delete_if{|procedure| !procedure.match(/#{params[:search_string]}/i)}
-    @procedure_done.delete_if{|procedure| params[:excludecs].present? and
-        procedure.match(/Caesarean section/i)}
+    @procedure_done.delete_if{|procedure| (params[:excludecs].present? or
+        gravida.to_i <= 1) and procedure.match(/Caesarean section/i)}
     
     render :text => "<li>" + @procedure_done.join("</li><li>") + "</li>"
   end

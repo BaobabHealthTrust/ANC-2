@@ -112,6 +112,10 @@ class ClinicController < GenericClinicController
     render :layout => "menu"
   end
 
+  def no_hysterectomy
+    render :layout => "menu"
+  end
+
 	def no_minors
     render :layout => "menu"
   end

@@ -894,6 +894,38 @@ class Reports
     first_visit_patient_ids = @anc_visits.reject { |x, y| y <= 1 }.collect { |x, y| x }.uniq
     first_visit_patient_ids = [0] if first_visit_patient_ids.blank?
 
+    current_pregnancy_encounter = EncounterType.find_by_name("CURRENT PREGNANCY").encounter_type_id
+    lmp_concept_id = ConceptName.find_by_name("Date of last menstrual period").concept_id
+
+    hiv_status_concept_id = ConceptName.find_by_name("HIV status").concept_id
+    hiv_test_date_concept_id = ConceptName.find_by_name("HIV test date").concept_id
+    positive_concept_id = ConceptName.find_by_name("Positive").concept_id
+
+   
+    select = Encounter.find_by_sql([
+        "SELECT e.patient_id,
+            (select max(enc.encounter_datetime) as date from encounter enc
+              inner join obs o on o.person_id = enc.patient_id
+             Where enc.encounter_type = ? and o.concept_id = ? and enc.voided = 0 and o.voided = 0 and enc.patient_id = e.patient_id
+             and enc.encounter_datetime between ?  AND ?) as visit_date ,
+            (select ifnull(obs.value_datetime, obs.value_text) from obs obs 
+             where obs.concept_id = ? and DATE(obs.obs_datetime) = DATE(e.encounter_datetime) 
+             and obs.voided = 0 and obs.person_id = e.patient_id limit 1) as test_date
+          FROM encounter e
+           inner join obs ob where e.patient_id = ob.person_id
+          AND (ob.concept_id = ? and (ob.value_coded = ? or ob.value_text = 'Positive'))
+          AND e.encounter_datetime between ?  AND ?
+          AND e.patient_id in (?)
+          AND e.voided = 0 and ob.voided = 0
+          Group BY e.patient_id
+          HAVING DATE(visit_date) = DATE(test_date)",
+          current_pregnancy_encounter, lmp_concept_id,
+          @today.to_date.beginning_of_month.strftime('%Y-%m-%d 00:00:00'),
+          @today.to_date.end_of_month.strftime('%Y-%m-%d 23:59:59'),
+          hiv_test_date_concept_id, hiv_status_concept_id, positive_concept_id,
+          @today.to_date.beginning_of_month.strftime('%Y-%m-%d 00:00:00'),
+          @today.to_date.end_of_month.strftime('%Y-%m-%d 23:59:59'), @monthly_patients]).map(&:patient_id)
+=begin    
     select = Encounter.find_by_sql([
                 "SELECT
                 e.patient_id,
@@ -925,7 +957,7 @@ class Reports
                 @today.to_date.end_of_month.strftime('%Y-%m-%d 23:59:59'),
                 @monthly_patients,(@today.to_date - 1.day), (@today.to_date - 1.day)
                 ]).map(&:patient_id)
-    
+=end    
     return select.uniq
   end
 

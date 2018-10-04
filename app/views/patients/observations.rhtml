@@ -521,7 +521,7 @@
         jQuery('#touchscreenInput'+ tstCurrentPage).attr("absoluteMax", abMax);
     }
 
-    setTimeout("selectNone()", 50);
+    //setTimeout("selectNone()", 50);
     //-->
 </script>
 
@@ -748,7 +748,8 @@
     <%= touch_select_tag "FETAL MOVEMENT FELT", @patient,
                          options_for_select([["", ""], ["Yes", "Yes"], ["No", "No"]]),
                          {:id => "fetal_movemement_felt",
-                          :condition => "__$('presentation').value != 'Ball' || __$('presentation').value != 'Nil palpable'",
+                          :condition => "(__$('presentation').value != 'Ball' || __$('presentation').value != 'Nil palpable') 
+                          && (__$('enter_fetal_heart').value != 'Not heard' && __$('enter_fetal_movemement').value != 'No')",
                           :tt_onLoad => "",
                           :helptext => "Fetal Movement Felt <span class='helper'> ANC Examination</span>"}, session_date %>
 
@@ -770,7 +771,8 @@
                            :tt_onUnLoad => "clearTimeout(timedEvent);",
                            :tt_pageStyleClass => "NumbersWithUnknown",
                            :tt_onLoad => "buildConceptsHash(); setTimeout(function(){ readableMessage()}, 50); addAbsoluteMax('enter_fundal_height');",
-                           :condition => "__$('fetal_movemement_felt').value !== '' || __$('fetal_movemement_felt').value !== 'Unknown'"
+                           :condition => "(__$('fetal_movemement_felt').value !== '' || __$('fetal_movemement_felt').value !== 'Unknown')
+                            && (__$('enter_fetal_heart').value != 'Not heard' && __$('enter_fetal_movemement').value != 'No')"
                           }, session_date %>
 
     <%#--------------------------------------------------------%>
@@ -792,7 +794,7 @@
     <%#= hidden_field_tag("observations[][patient_id]", @patient.id) %>
     <%#= hidden_field_tag("observations[][obs_datetime]", session_date) %>
 
-    <% options[:tt_onLoad] = "setTimeout(updateNextFinish, 20); changeUnknownToNone();" %>
+    <% options[:tt_onLoad] = "selectNone(); setTimeout(updateNextFinish, 20); changeUnknownToNone();" %>
     <script>
         // Every 500 milliseconds update the Next/Finish button
         function updateNextFinish() {

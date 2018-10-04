@@ -226,7 +226,8 @@
     client +=  "&person[names][middle_name]="  +__$('middle_name').value;
    }catch(e){}
     
-   client +=  "&person[gender]=" +  __$('gender').value;
+   //client +=  "&person[gender]=" +  __$('gender').value;
+   client +=  "&person[gender]=F" //+  __$('gender').value;
    client +=  "&person[birthdate]=" + culBirthdate()[0];
    client +=  "&person[birthdate_estimated]=" + culBirthdate()[1];
    client +=  "&person[addresses][home_district]=" + __$('address2').value;  
@@ -328,8 +329,8 @@
 
   <%= text_field_tag "person[names][family_name]", params[:family_name], {:id => 'family_name', :field_type => 'alpha', :helpText => 'Last name', :ajaxURL => '/person_names/family_names?search_string=', :allowFreeText => true, :condition => '$("family_name").value == "" || skipped[tstCurrentPage] == 1', :tt_onLoad => 'seen(tstCurrentPage);' } %>
 
-  Gender: <%= f.select :gender, {"" => "", "Male" => "M", "Female" => "F"}, {:selected => params[:gender]}, {:id => 'gender', :helpText => 'Gender', :condition => '$("gender").value == "" || skipped[tstCurrentPage] == 1', :tt_onLoad => 'seen(tstCurrentPage);' } %>
-
+  <!-- Gender: < %= f.select :gender, {"" => "", "Male" => "M", "Female" => "F"}, {:selected => params[:gender]}, {:id => 'gender', :helpText => 'Gender', :condition => '$("gender").value == "" || skipped[tstCurrentPage] == 1', :tt_onLoad => 'seen(tstCurrentPage);' } %>
+-->
   <%= text_field_tag "person[names][middle_name]", params[:middle_name],
     {:id => 'middle_name',
     :field_type => 'alpha',
@@ -491,7 +492,7 @@
       :condition => "__$('occupation').value.match(/MDF/i)")%>
   <% end %>
 
-  <% if params[:relation].blank? %>
+  <% if false %>
     <%= select_tag("guardian_present", options_for_select([['Yes','YES'],['No','NO']]),
       :id => "guardian_present",
       :helpText => "Guardian Present",
@@ -501,7 +502,7 @@
   <!-- Make sure patient is created -->
 
 
-  <! -- DDE check for potential duplicates -->
+  <!-- DDE check for potential duplicates -->
   <%= text_field_tag :summary, nil, { 
     :tt_onLoad => "potentialduplicateCheck();__$('keyboard').style.display = 'none'; disablebutton();", 
     :optional => "true",
@@ -515,6 +516,8 @@
   <%= hidden_field_tag "person[patient]", "" %>
 
   <%= hidden_field_tag "relation", params[:relation] %>
+  
+  <%= hidden_field_tag "person[gender]", "F" %>
 
   <%= hidden_field_tag :identifier, params[:identifier] %>
 

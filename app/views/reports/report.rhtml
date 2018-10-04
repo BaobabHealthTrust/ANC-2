@@ -1104,6 +1104,7 @@
                               <td>
                                 26
                               </td>
+
                               <td style="border-left: 1px solid #999;">
                                 <form id="final_on_art_before" method="post" action="decompose">
                                   <input type="hidden" value="<%= @final_visit_on_art_before.join(",") %>" name="patients" />
@@ -1111,7 +1112,7 @@
                                 </form>
                               </td>
                               <td class="valueCell" style="border-top: 0px;">
-                                <a href="javascript:document.getElementById('on_art_before').submit()">
+                                <a href="javascript:document.getElementById('final_on_art_before').submit()">
                                   <%= @final_visit_on_art_before.length rescue 0 %>
                                 </a>
                               </td>
@@ -1127,7 +1128,7 @@
                                 </form>
                               </td>
                               <td class="valueCell" style="border-top: 0px;">
-                                <a href="javascript:document.getElementById('on_art_zero_to_27').submit()">
+                                <a href="javascript:document.getElementById('final_on_art_zero_to_27').submit()">
                                   <%= @final_visit_on_art_zero_to_27.length rescue 0 %>
                                 </a>
                               </td>
@@ -1143,7 +1144,7 @@
                                 </form>
                               </td>
                               <td class="valueCell" style="border-top: 0px;">
-                                <a href="javascript:document.getElementById('on_art_28_plus').submit()">
+                                <a href="javascript:document.getElementById('final_on_art_28_plus').submit()">
                                   <%= @final_visit_on_art_28_plus.length rescue 0 %>
                                 </a>
                               </td>

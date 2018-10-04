@@ -434,21 +434,24 @@ class GenericPeopleController < ApplicationController
 
   def districts_for
 
-    region_id = Region.find_by_name("#{params[:filter_value]}").id rescue nil
+    region = Region.find_by_name("#{params[:filter_value]}")
+    region_id = region.id rescue nil
     region_conditions = ["name LIKE (?) AND region_id = ? ", "%#{params[:search_string]}%", region_id]
+    nations = ["Mozambique", "Zambia", "Tanzania", "Zimbambe", "Nigeria", "Burundi", "Namibia"]
 
     districts = District.find(:all,:conditions => region_conditions, :order => 'name') rescue []
     districts = districts.map do |d|
       d.name
     end
+    districts = (nations + districts).uniq if region.name.downcase == "foreign"
 
     if region_id.blank?
       nationalities = []
-      File.open(RAILS_ROOT + "/public/data/nationalities.txt", "r").each{ |nat|
+      File.open(RAILS_ROOT + "/public/data/nations.txt", "r").each{ |nat|
         nationalities << nat
       }
       if nationalities.length > 0
-        nationalities = (["Mozambican", "Zambian", "Tanzanian", "Zimbambean", "Nigerian", 'Burundian', "Namibian"] + nationalities).uniq
+        nationalities = (["Mozambique", "Zambia", "Tanzania", "Zimbambe", "Nigeria", 'Burundi', "Namibia"] + nationalities).uniq
       end
       districts = nationalities
     end
