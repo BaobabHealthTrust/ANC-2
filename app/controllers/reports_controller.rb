@@ -848,6 +848,7 @@ class ReportsController < ApplicationController
       when "Known status"
         @value = getANCClientsWithKnownStatus(monthly_patients,age)
       when "Already on ART"
+        @value = getANCClientAlreadyOnART(positive_patients, age)
       when "Newly Identified Positive"
         @value = getANCClientNewlyIdentifiedPositive(monthly_patients, age, end_date)
       when "Newly Identified Negative"
@@ -1086,6 +1087,57 @@ class ReportsController < ApplicationController
       patient_ids, date, date])
 
       return results
+    end
+    
+    def getANCClientAlreadyOnART(positive_patients, age)
+      
+      case age
+        when "<10"
+          query_condition = "GROUP BY i.patient_id HAVING age < 10"
+        when "Unknown Age"
+          query_condition = "GROUP BY i.patient_id HAVING age = NULL"
+        when "50+"
+          query_condition = "GROUP BY i.patient_id HAVING age >= 50"
+        when "All"
+          query_condition = "GROUP BY i.patient_id"
+        else
+          raw_age = age.split("-")
+          min_age = raw_age[0].to_i
+          max_age = raw_age[1].to_i
+
+          query_condition = "GROUP BY i.patient_id HAVING age >= #{min_age} AND age <= #{max_age}"
+      end
+
+      ## Get patients national IDs.
+      identifier_type_id = PatientIdentifierType.find_by_name("National ID").id
+      sql_query =   "select identifier from patient_identifier "
+      sql_query +=  "where patient_id in (?) and identifier_type = ? and voided = '0'"
+      patient_npids = PatientIdentifier.find_by_sql([sql_query, positive_patients.map(&:patient_id), 
+        identifier_type_id]).map(&:identifier)
+      
+      ## Gets patient's art start date if exist.
+      query =   "SELECT i.identifier, YEAR(p.date_created) - YEAR(p.birthdate) "
+      query +=  "- IF(STR_TO_DATE(CONCAT(YEAR(p.date_created), '-', MONTH(p.birthdate), '-', "
+      query +=  "DAY(p.birthdate)) ,'%Y-%c-%e') > p.date_created, 1, 0) AS age FROM patient_identifier i "
+      query +=  "INNER JOIN person p ON (p.person_id = i.patient_id)"
+      query +=  "INNER JOIN patient_program pg ON i.patient_id = pg.patient_id AND "
+      query +=  "pg.program_id = 1 AND pg.voided = 0 "
+      query +=  "INNER JOIN patient_state s2 ON s2.patient_state_id = s2.patient_state_id "
+      query +=  "AND pg.patient_program_id = s2.patient_program_id "
+      query +=  "AND s2.patient_state_id = (SELECT MAX(s3.patient_state_id) FROM patient_state s3 "
+      query +=  "WHERE s3.patient_state_id = s2.patient_state_id) "
+      query +=  "AND i.voided = 0 AND i.identifier in (?) AND s2.state = 7 "
+      query +=  query_condition
+      #raise patient_npids.inspect
+
+      bart_on_art = Bart2Connection::PatientIdentifier.find_by_sql([query, patient_npids]).map(&:identifier)
+
+      ## Get anc patient id from national ID
+      sql_query =   "select patient_id from patient_identifier where identifier in (?) and voided = 0"
+      patient_ids = PatientIdentifier.find_by_sql([sql_query, bart_on_art]).map(&:patient_id) rescue []
+
+      return patient_ids
+
     end
 
     def getANCClientNewlyOnART(patient_ids, age, date)
