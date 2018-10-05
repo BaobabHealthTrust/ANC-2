@@ -811,7 +811,7 @@ class ReportsController < ApplicationController
 
       @facility = Location.current_health_center.name
 
-      @district = "Nkhotakota"
+      @district = YAML.load_file("#{Rails.root}/config/application.yml")[Rails.env]["district"]
 
       @age_groups = ["<10", "10-14", "15-19", "20-24", "25-29", "30-34",
                      "35-39", "40-49", "50+", "Unknown Age", "All"]
