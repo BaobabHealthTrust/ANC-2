@@ -117,6 +117,13 @@
         <% if (@user['name'].upcase rescue nil) == "SUPER USER" %>
             <!--button id="staging" class="yellow"><span>Staging</span></button-->
         <% end %>
+        <% if (@disagregated_report) %>
+        <button class="blue" style="width: 190px; float: right; margin: 10px;"  onmousedown="$('#table3').table2CSV();">
+          <span>
+            Export to CSV
+          </span>
+        </button>
+        <%end%>
       </div>
     </div>
   </div>

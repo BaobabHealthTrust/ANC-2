@@ -795,6 +795,7 @@ class ReportsController < ApplicationController
 
 # Begin Pepfar report actions
     def pepfar_report
+      @disagregated_report = true
 
       start_date = "#{params[:start_year]}-#{params[:start_month]}-01".to_date
       end_date   = "#{params[:end_year]}-#{params[:end_month]}-01".to_date
