@@ -397,7 +397,7 @@ class DdeController < ApplicationController
       redirect_to :action => :search_by_name_and_gender, :identifier => params[:identifier]
     elsif params[:person][:id] != '0' && Person.find(params[:person][:id]).dead == 1
       redirect_to :controller => :patients, :action => :show, :id => params[:person][:id]
-    elsif params[:identifier].blank? && params[:person][:id] == '0' # DDE Patient without ID.
+    elsif params[:identifier].blank? && params[:person][:id] == '0' && !params[:dde_document_id].blank? # DDE Patient without ID.
       doc_id = params[:dde_document_id]
       reassign_dde_npid(doc_id) and return
     else
@@ -620,7 +620,7 @@ class DdeController < ApplicationController
       location = DDEService.get_dde_location(dde_url, params[:location], params[:dde_token])
       app_location = Location.current_health_center.name rescue ""
 
-      unless app_location == location["name"]
+      unless app_location == location.first["name"]
         redirect_to :controller => "dde", :action => "dde_add_user",
           :dde_token => params[:dde_token], :dde_username => params[:username],
           :dde_port => params[:dde_port], :dde_ipaddress => params[:dde_ipaddress],
