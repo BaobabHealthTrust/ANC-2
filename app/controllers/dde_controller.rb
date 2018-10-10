@@ -155,9 +155,11 @@ class DdeController < ApplicationController
 				message = local_client_to_dde(person_id)
 		
 				unless message.blank? 
-          redirect_to :controller => "dde", 
-            :action => "edit_demographics", 
-            :patient_id => person_id, :message => message  and return
+          if message.match(/Search by name and update patient address info/i)
+            redirect_to :controller => "dde", 
+              :action => "edit_demographics", 
+              :patient_id => person_id, :message => message  and return
+          end rescue nil
 				end
 
 
@@ -566,7 +568,10 @@ class DdeController < ApplicationController
     # Update dde token session
     property = GlobalProperty.find_by_property('dde.status')
     if property.blank?
-      GlobalProperty.create(:property => 'dde.status', :property_value => 'ON')
+      g           = GlobalProperty.new
+      g.property  = "dde.status"
+      g.property_value = "ON"
+      g.save
     else
       property.update_attributes(:property_value => 'ON')
     end
@@ -946,9 +951,11 @@ class DdeController < ApplicationController
       message = local_client_to_dde(params[:person_id])
 		
       unless message.blank? 
-        redirect_to :controller => "dde", 
-          :action => "edit_demographics", 
+        if message.match(/Search by name and update patient address info/i)
+          redirect_to :controller => "dde", 
+            :action => "edit_demographics", 
             :patient_id =>params[:person_id], :message => message  and return
+        end rescue nil
       end
     end
      
