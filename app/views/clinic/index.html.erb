@@ -34,7 +34,7 @@
     <%if create_from_dde
       find_or_reg_patient = '/dde/search?gender=Female'
     else
-      find_or_reg_patient = '/people/search'
+      find_or_reg_patient = '/people/search?gender=Female'
     end%>
     <option value="<%= find_or_reg_patient%>" link="<%=find_or_reg_patient%>" ttSize="290px">Find / Register Patient</option>
     <!-- option value='/people/search' link='/people/search' ttSize="290px">Find / Register Patient</option -->
