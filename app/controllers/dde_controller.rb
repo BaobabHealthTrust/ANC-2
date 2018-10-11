@@ -491,9 +491,9 @@ class DdeController < ApplicationController
       end
     
       if (dde_status == 'ON') #Do this part only when DDE is activated
+        address = params[:dde_address].to_s + ":" + params[:dde_port].to_s
 
         unless (dde_app_user.blank?)
-          address = params[:dde_address].to_s + ":" + params[:dde_port].to_s
           #raise address.inspect
           data = {
             :username => dde_app_user.username,
