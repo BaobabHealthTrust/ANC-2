@@ -24,7 +24,7 @@ pos = 1
     people[<%= pos %>]["Age"] = "<%= person["age"] %>";
     people[<%= pos %>]["Home District"] = "<%= person["home_district"] -%>";
     people[<%= pos %>]["Ancestral Traditional Authority(T/A)"] = "<%= person["home_ta"] -%>";
-    people[<%= pos %>]["Current Residence"] = "Area 23";
+    people[<%= pos %>]["Current Residence"] = "<%=person["current_residence"]%>";
   <%
 
   pos = pos + 1
