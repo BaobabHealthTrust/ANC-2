@@ -627,23 +627,17 @@ class ReportsController < ApplicationController
   def appointments_on_date 
       @datetime = params[:date]
       concept_id = ConceptName.find_by_name("APPOINTMENT DATE").concept_id
-      query = "SELECT date(encounter_datetime), identifier, given_name, family_name, birthdate FROM encounter 
-                  INNER JOIN obs 
-                  ON obs.encounter_id = encounter.encounter_id
-                  INNER JOIN concept
-                  ON concept.concept_id = obs.concept_id
-                  INNER JOIN person_name
-                  ON person_name.person_name_id = obs.person_id
-                  INNER JOIN patient_identifier
-                  ON patient_identifier.patient_id = person_name.person_name_id
-                  INNER JOIN person
-                  ON person.person_id = patient_identifier.patient_id
-                  WHERE concept.concept_id = '#{concept_id}'
-                  AND obs.voided = '0'
-                  AND date(obs.obs_datetime) = '#{@datetime}'"
-        @appointment_result = ActiveRecord::Base.connection.select_all(query)
-        render :layout => 'report'
-  end
+      query = "SELECT identifier, given_name, family_name, birthdate, o.person_id FROM obs o 
+        INNER JOIN person p ON o.person_id = p.person_id
+        INNER JOIN person_name pn ON o.person_id = pn.person_id
+        INNER JOIN patient_identifier pi ON o.person_id = pi.patient_id
+        WHERE o.concept_id = '#{concept_id}'
+        AND o.voided = '0' AND date(o.obs_datetime) = '#{@datetime}'"
+
+      @appointment_result = ActiveRecord::Base.connection.select_all(query)
+      render :layout => 'report'
+    end
+
 
 
   def decompose
