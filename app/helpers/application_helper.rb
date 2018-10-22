@@ -253,6 +253,10 @@ module ApplicationHelper
     return false
   end
 
+  def ask_for_guardian?
+    return false
+  end
+
   def create_from_dde
     dde_status = GlobalProperty.find_by_property('dde.status').property_value.to_s.squish rescue 'OFF'#New DDE API
     if (dde_status.upcase == 'ON')
