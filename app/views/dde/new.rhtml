@@ -333,7 +333,7 @@
   if ask_for_father_details == true %>
   Gender: <%= f.select :gender, {"" => "", "Male" => "M", "Female" => "F"}, {:selected => params[:gender]}, {:id => 'gender', :helpText => 'Gender', :condition => '$("gender").value == "" || skipped[tstCurrentPage] == 1', :tt_onLoad => 'seen(tstCurrentPage);' } %>
   <%else%>
-  <%= hidden_field_tag "gender", "NO" id="gender" %>
+  <input type="hidden" name="person[gender]" value="F" id="gender" >
   <%end%>
   <%= text_field_tag "person[names][middle_name]", params[:middle_name],
     {:id => 'middle_name',

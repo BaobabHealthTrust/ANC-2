@@ -17,9 +17,14 @@
     :allowFreeText => true, 
     :condition => '$("family_name").value == "" || skipped[tstCurrentPage] == 1', 
     :tt_onLoad => 'seen(tstCurrentPage);' } %>
-
+<% ask_for_father_details = CoreService.get_global_property_value("father_details") rescue 'false'
+  
+  if ask_for_father_details == true %>
     Gender: <%= f.select :gender, {"" => "", "Male" => "M", "Female" => "F"}, 
     {:selected => params[:gender]}, {:id => 'gender', 
     :helpText => 'Gender' } %>
+<% else %>
+  <input type="hidden" name="person[gender]" value="F" id="gender" >
+<%end%>
 
 <% end %>
