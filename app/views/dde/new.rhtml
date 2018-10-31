@@ -491,12 +491,14 @@
       :condition => "__$('occupation').value.match(/MDF/i)")%>
   <% end %>
 
-  <% if params[:relation].blank? %>
+  <% if ask_for_guardian? %>
     <%= select_tag("guardian_present", options_for_select([['Yes','YES'],['No','NO']]),
       :id => "guardian_present",
       :helpText => "Guardian Present",
       :allowFreeText => false,
       :ttMatchFromBeginning => "true")%>
+  <%else%>
+    <%= hidden_field_tag "guardian_present", "NO" %>
   <% end %>
   <!-- Make sure patient is created -->
 
