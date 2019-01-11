@@ -18,8 +18,8 @@ gem 'nokogiri', '1.5.0'
 gem 'mime-types', '1.25.1'
 gem 'pdfkit'
 gem 'wkhtmltopdf-binary'
-gem 'data_extractor'
-gem 'anc_data_extractor'
+#gem 'data_extractor'
+#gem 'anc_data_extractor'
 
 group :test, :development do
   gem 'rspec', '3.6.0'
