@@ -1,4 +1,5 @@
 var details_available = [];
+var age_units = "hours"
 
 function readableMessage(){
 
@@ -322,7 +323,7 @@ function stringfy(hash){
 }
 
 function disablePastVisits(){
-    if (last_visit < 11){
+    if (last_visit < 7){
         for(var i = 0; i < anc_visits.length; i++){
             if(__$(anc_visits[i])){
                 __$(anc_visits[i]).className = "keyboardButton gray";
@@ -828,6 +829,30 @@ function loadInputWindow(){
                 var unit = "";
                 if (__$("unit")){
                     unit = __$("unit").value
+                }
+                try{
+                  if(type && type.toLowerCase() == 'age'){
+                    var value   =  __$('input').innerHTML;
+                    var max_birth_months      = parseInt(mother_age * 12);
+                    var max_birth_weeks       = parseInt(max_birth_months * 4);
+                    var max_birth_days        = parseInt(max_birth_weeks * 7);
+                    var max_birth_hours       = parseInt(max_birth_days * 24);
+                    
+                    if (age_units == "years"){
+                      max = mother_age;
+                    }else if(age_units == "months"){
+                      max = max_birth_months;
+                    }else if(age_units == "weeks"){
+                      max = max_birth_weeks;
+                    }else if(age_units == "days"){
+                      max = max_birth_days;
+                    }else if(age_units == "hours"){
+                      max = max_birth_hours;
+                    }
+          
+                  }
+                }catch(e){
+                    console.log(e)
                 }
 
                 var row = __$(__$("popup").getAttribute("row_id"));
@@ -2043,4 +2068,14 @@ function addValidationInterval(){
         }
     }
 }
+
+// function to update age_units value
+setInterval(function(){
+  try{
+    age_units = __$('unit').value.toLowerCase();      
+  }catch (error){
+    console.error(error);
+  }
+  console.log(mother_age);
+}, 200)
     
