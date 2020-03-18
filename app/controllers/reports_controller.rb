@@ -645,7 +645,6 @@ class ReportsController < ApplicationController
         render :layout => 'report'
   end
 
-
   def decompose
     #raise params.inspect
     @facility = Location.current_health_center.name rescue ''
@@ -800,7 +799,9 @@ class ReportsController < ApplicationController
         render :layout => "report"
       end
 
+# Begin Pepfar report actions
     def pepfar_report
+      @disagregated_report = true
 
       start_date = "#{params[:start_year]}-#{params[:start_month]}-01".to_date
       end_date   = "#{params[:end_year]}-#{params[:end_month]}-01".to_date
@@ -819,12 +820,365 @@ class ReportsController < ApplicationController
       @district = YAML.load_file("#{Rails.root}/config/application.yml")[Rails.env]["district"]
 
       @age_groups = ["<10", "10-14", "15-19", "20-24", "25-29", "30-34",
-                     "30-49", "35-39", "40-49", "50+", "Unknown Age", "All"]
+                     "35-39", "40-49", "50+", "Unknown Age", "All"]
 
       @indicators = [
         "Newly on ART", "New ANC client", "Known status", "Already on ART", "Newly Identified Positive",
          "Newly Identified Negative", "Known at Entry Positive"
       ]
+      render :layout => "report"
+    end
+
+    def disagregated_report
+      district  = params[:district]
+      site      = params[:facility]
+      year      = params[:year]
+      month     = params[:month]
+      indicator = params[:indicator]
+      age       = params[:age]
+      
+      # Format date.
+      raw_date  = "01/"+month+"/"+year
+      date      = raw_date.to_date
+      start_date = date.beginning_of_month
+      end_date  = date.end_of_month
+
+      @value = []
+      monthly_patients = monthly_registrations(start_date,end_date)
+      positive_patients = getANCClientsWithHIVPositive(monthly_patients)
+
+      case indicator
+      when "Newly on ART"
+        @value = getANCClientNewlyOnART(positive_patients,age, end_date)
+      when "New ANC client"
+        @value = getNewANCClient(monthly_patients,age)
+      when "Known status"
+        @value = getANCClientsWithKnownStatus(monthly_patients,age)
+      when "Already on ART"
+        @value = getANCClientAlreadyOnART(positive_patients, age)
+      when "Newly Identified Positive"
+        @value = getANCClientNewlyIdentifiedPositive(monthly_patients, age, end_date)
+      when "Newly Identified Negative"
+        @value = getANCClientNewlyIdentifiedNegative(monthly_patients, age, end_date)
+      when "Known at Entry Positive"
+        @value = getANCClientKnownPositiveAtEntry(monthly_patients, age, end_date)
+      end
+
+      render :text => @value.count
+    end
+
+    def monthly_registrations(start_date, end_date)
+
+      current_pregnancy_id = EncounterType.find_by_name('Current Pregnancy').id
+      lmp_concept_id = ConceptName.find_by_name('Date of Last Menstrual Period').concept_id
+
+      Encounter.find(:all, 
+        :joins => ['INNER JOIN obs ON obs.person_id = encounter.patient_id'],
+        :group => [:patient_id],
+        :select => ['MAX(value_datetime) lmp, patient_id'],
+        :conditions => ['encounter_type = ? AND obs.concept_id = ?
+          AND DATE(encounter_datetime) >= ?
+          AND DATE(encounter_datetime) <= ?
+          AND encounter.voided = 0',
+        current_pregnancy_id,lmp_concept_id,
+        start_date,end_date]
+      ).collect { |e| e.patient_id }.uniq
+  
+    end
+
+    def getNewANCClient(patient_ids, age)
+      case age
+      when "<10"
+        query_condition = "WHERE person_id in (?) GROUP BY person_id HAVING age < 10"
+      when "Unknown Age"
+        query_condition = "WHERE person_id in (?) GROUP BY person_id HAVING age = NULL"
+      when "50+"
+        query_condition = "WHERE person_id in (?) GROUP BY person_id HAVING age >= 50"
+      when "All"
+        query_condition = "WHERE person_id in (?) GROUP BY person_id"
+      else
+        raw_age = age.split("-")
+        min_age = raw_age[0].to_i
+        max_age = raw_age[1].to_i
+
+        query_condition =  "WHERE person_id in (?) GROUP BY person_id "
+        query_condition += "HAVING age >= #{min_age} AND age <= #{max_age}"
+      end
+
+      results = Person.find_by_sql(["SELECT *, YEAR(date_created) - YEAR(birthdate) - IF(STR_TO_DATE(CONCAT(YEAR(date_created), 
+          '-', MONTH(birthdate), '-', DAY(birthdate)) ,'%Y-%c-%e') > date_created, 1, 0) AS age 
+      FROM person #{query_condition}", patient_ids])
+
+      return results
+
+    end
+
+    def getANCClientsWithKnownStatus(patient_ids, age)
+      hiv_status_concept_id = ConceptName.find_by_name("HIV Status").concept_id
+      prev_hiv_status_concept_id = ConceptName.find_by_name("Previous HIV Test Results").concept_id
+
+      case age
+      when "<10"
+        query_condition = "GROUP BY e.patient_id HAVING age < 10"
+      when "Unknown Age"
+        query_condition = "GROUP BY e.patient_id HAVING age = NULL"
+      when "50+"
+        query_condition = "GROUP BY e.patient_id HAVING age >= 50"
+      when "All"
+        query_condition = "GROUP BY e.patient_id"
+      else
+        raw_age = age.split("-")
+        min_age = raw_age[0].to_i
+        max_age = raw_age[1].to_i
+
+        query_condition = "GROUP BY e.patient_id HAVING age >= #{min_age} AND age <= #{max_age}"
+      end
+
+      results = Encounter.find_by_sql(["SELECT distinct e.patient_id, YEAR(p.date_created) - YEAR(p.birthdate) - IF(STR_TO_DATE(CONCAT(YEAR(p.date_created), 
+          '-', MONTH(p.birthdate), '-', DAY(p.birthdate)) ,'%Y-%c-%e') > p.date_created, 1, 0) AS age 
+        FROM encounter e 
+        INNER JOIN person p ON (p.person_id = e.patient_id)
+        INNER JOIN obs o ON (e.encounter_id = o.encounter_id) WHERE e.patient_id in (?) 
+        AND (o.concept_id = #{hiv_status_concept_id} OR o.concept_id = #{hiv_status_concept_id}) 
+        AND (((o.value_coded = (SELECT concept_id FROM concept_name WHERE name = 'Positive' LIMIT 1))
+          OR (o.value_text = 'Positive')) 
+          OR ((o.value_coded = (SELECT concept_id FROM concept_name WHERE name = 'Negative' LIMIT 1))
+          OR (o.value_text = 'Negative'))) #{query_condition}", patient_ids])
+      
+      return results
+    end
+
+    def getANCClientKnownPositiveAtEntry(patient_ids, age, end_date)
+
+      hiv_status_concept_id = ConceptName.find_by_name("HIV Status").concept_id
+      prev_hiv_status_concept_id = ConceptName.find_by_name("Previous HIV Test Results").concept_id
+
+      case age
+      when "<10"
+        query_condition = "GROUP BY e.patient_id HAVING age < 10"
+      when "Unknown Age"
+        query_condition = "GROUP BY e.patient_id HAVING age = NULL"
+      when "50+"
+        query_condition = "GROUP BY e.patient_id HAVING age >= 50"
+      when "All"
+        query_condition = "GROUP BY e.patient_id"
+      else
+        raw_age = age.split("-")
+        min_age = raw_age[0].to_i
+        max_age = raw_age[1].to_i
+
+        query_condition = "GROUP BY e.patient_id HAVING age >= #{min_age} AND age <= #{max_age}"
+      end
+
+      query_1 = Encounter.find_by_sql(["SELECT e.patient_id, YEAR(p.date_created) - YEAR(p.birthdate) - IF(STR_TO_DATE(CONCAT(YEAR(p.date_created), 
+          '-', MONTH(p.birthdate), '-', DAY(p.birthdate)) ,'%Y-%c-%e') > p.date_created, 1, 0) AS age,
+          e.encounter_datetime AS date FROM encounter e 
+        INNER JOIN person p ON (p.person_id = e.patient_id)
+        INNER JOIN obs o ON o.encounter_id = e.encounter_id AND e.voided = 0
+        WHERE o.concept_id = (SELECT concept_id FROM concept_name WHERE name = 'HIV status' LIMIT 1)
+        AND ((o.value_coded = (SELECT concept_id FROM concept_name WHERE name = 'Positive' LIMIT 1))
+          OR (o.value_text = 'Positive'))
+        AND e.patient_id IN (?)
+        AND e.encounter_id = (SELECT MAX(encounter.encounter_id) FROM encounter
+          INNER JOIN obs ON obs.encounter_id = encounter.encounter_id AND obs.concept_id =
+          (SELECT concept_id FROM concept_name WHERE name = 'HIV test date' LIMIT 1)
+          WHERE encounter_type = e.encounter_type AND patient_id = e.patient_id
+          AND DATE(encounter.encounter_datetime) <= ?)
+          AND (DATE(e.encounter_datetime) <= ?) AND DATE(e.encounter_datetime) > DATE((SELECT value_text FROM obs
+          WHERE encounter_id = e.encounter_id AND obs.concept_id =
+          (SELECT concept_id FROM concept_name WHERE name = 'HIV test date' LIMIT 1)))
+        #{query_condition} ",
+        patient_ids, end_date, end_date])
+      
+      query_2 = Encounter.find_by_sql(["SELECT e.patient_id, YEAR(p.date_created) - YEAR(p.birthdate) - IF(STR_TO_DATE(CONCAT(YEAR(p.date_created), 
+          '-', MONTH(p.birthdate), '-', DAY(p.birthdate)) ,'%Y-%c-%e') > p.date_created, 1, 0) AS age 
+        FROM encounter e 
+        INNER JOIN person p ON (p.person_id = e.patient_id) 
+        INNER JOIN obs o ON o.encounter_id = e.encounter_id AND e.voided = 0
+        WHERE o.concept_id = (SELECT concept_id FROM concept_name WHERE name = 'Previous HIV Test Results' LIMIT 1)
+        AND ((o.value_coded = (SELECT concept_id FROM concept_name WHERE name = 'Positive' LIMIT 1))
+          OR (o.value_text = 'Positive'))
+        AND e.patient_id IN (?) #{query_condition} ",
+        patient_ids])
+
+      results = query_1 + query_2
+      return results
+    end
+
+    def getANCClientNewlyIdentifiedPositive(patient_ids, age, date)
+
+      hiv_status_concept_id = ConceptName.find_by_name("HIV Status").concept_id
+      prev_hiv_status_concept_id = ConceptName.find_by_name("Previous HIV Test Results").concept_id
+
+      case age
+      when "<10"
+        query_condition = "GROUP BY e.patient_id HAVING age < 10"
+      when "Unknown Age"
+        query_condition = "GROUP BY e.patient_id HAVING age = NULL"
+      when "50+"
+        query_condition = "GROUP BY e.patient_id HAVING age >= 50"
+      when "All"
+        query_condition = "GROUP BY e.patient_id"
+      else
+        raw_age = age.split("-")
+        min_age = raw_age[0].to_i
+        max_age = raw_age[1].to_i
+
+        query_condition = "GROUP BY e.patient_id HAVING age >= #{min_age} AND age <= #{max_age}"
+      end
+
+      results = Encounter.find_by_sql(["SELECT e.patient_id, YEAR(p.date_created) - YEAR(p.birthdate) - IF(STR_TO_DATE(CONCAT(YEAR(p.date_created), 
+        '-', MONTH(p.birthdate), '-', DAY(p.birthdate)) ,'%Y-%c-%e') > p.date_created, 1, 0) AS age,
+        e.encounter_datetime AS date, (SELECT value_text FROM obs
+        WHERE encounter_id = e.encounter_id AND obs.concept_id =
+        (SELECT concept_id FROM concept_name WHERE name = 'HIV test date' LIMIT 1)) AS test_date
+      FROM encounter e 
+      INNER JOIN person p ON (p.person_id = e.patient_id)
+      INNER JOIN obs o ON o.encounter_id = e.encounter_id AND e.voided = 0
+      WHERE o.concept_id = (SELECT concept_id FROM concept_name WHERE name = 'HIV status' LIMIT 1)
+      AND ((o.value_coded = (SELECT concept_id FROM concept_name WHERE name = 'Positive' LIMIT 1))
+        OR (o.value_text = 'Positive'))
+      AND e.patient_id IN (?)
+      AND e.encounter_id = (SELECT MAX(encounter.encounter_id) FROM encounter
+        INNER JOIN obs ON obs.encounter_id = encounter.encounter_id AND obs.concept_id =
+        (SELECT concept_id FROM concept_name WHERE name = 'HIV test date' LIMIT 1)
+        WHERE encounter_type = e.encounter_type AND patient_id = e.patient_id
+        AND DATE(encounter.encounter_datetime) <= ?)
+        AND (DATE(e.encounter_datetime) <= ?)
+      #{query_condition} AND DATE(date) = DATE(test_date)",
+      patient_ids, date, date])
+
+      return results
+    end
+
+    def getANCClientNewlyIdentifiedNegative(patient_ids, age, date)
+
+      hiv_status_concept_id = ConceptName.find_by_name("HIV Status").concept_id
+
+      case age
+      when "<10"
+        query_condition = "GROUP BY e.patient_id HAVING age < 10"
+      when "Unknown Age"
+        query_condition = "GROUP BY e.patient_id HAVING age = NULL"
+      when "50+"
+        query_condition = "GROUP BY e.patient_id HAVING age >= 50"
+      when "All"
+        query_condition = "GROUP BY e.patient_id"
+      else
+        raw_age = age.split("-")
+        min_age = raw_age[0].to_i
+        max_age = raw_age[1].to_i
+
+        query_condition = "GROUP BY e.patient_id HAVING age >= #{min_age} AND age <= #{max_age}"
+      end
+
+      results = Encounter.find_by_sql(["SELECT e.patient_id, YEAR(p.date_created) - YEAR(p.birthdate) - IF(STR_TO_DATE(CONCAT(YEAR(p.date_created), 
+        '-', MONTH(p.birthdate), '-', DAY(p.birthdate)) ,'%Y-%c-%e') > p.date_created, 1, 0) AS age,
+        e.encounter_datetime AS date, (SELECT value_datetime FROM obs
+        WHERE encounter_id = e.encounter_id AND obs.concept_id =
+        (SELECT concept_id FROM concept_name WHERE name = 'HIV test date' LIMIT 1)) AS test_date
+      FROM encounter e 
+      INNER JOIN person p ON (p.person_id = e.patient_id)
+      INNER JOIN obs o ON o.encounter_id = e.encounter_id AND e.voided = 0
+      WHERE o.concept_id = (SELECT concept_id FROM concept_name WHERE name = 'HIV status' LIMIT 1)
+      AND ((o.value_coded = (SELECT concept_id FROM concept_name WHERE name = 'Negative' LIMIT 1))
+        OR (o.value_text = 'Negative'))
+      AND e.patient_id IN (?)
+      AND e.encounter_id = (SELECT MAX(encounter.encounter_id) FROM encounter
+        INNER JOIN obs ON obs.encounter_id = encounter.encounter_id AND obs.concept_id =
+        (SELECT concept_id FROM concept_name WHERE name = 'HIV test date' LIMIT 1)
+        WHERE encounter_type = e.encounter_type AND patient_id = e.patient_id
+        AND DATE(encounter.encounter_datetime) <= ?)
+        AND (DATE(e.encounter_datetime) <= ?)
+      #{query_condition} AND DATE(date) = DATE(test_date)",
+      patient_ids, date, date])
+
+      return results
+    end
+    
+    def getANCClientAlreadyOnART(positive_patients, age)
+      
+      case age
+        when "<10"
+          query_condition = "GROUP BY i.patient_id HAVING age < 10"
+        when "Unknown Age"
+          query_condition = "GROUP BY i.patient_id HAVING age = NULL"
+        when "50+"
+          query_condition = "GROUP BY i.patient_id HAVING age >= 50"
+        when "All"
+          query_condition = "GROUP BY i.patient_id"
+        else
+          raw_age = age.split("-")
+          min_age = raw_age[0].to_i
+          max_age = raw_age[1].to_i
+
+          query_condition = "GROUP BY i.patient_id HAVING age >= #{min_age} AND age <= #{max_age}"
+      end
+
+      ## Get patients national IDs.
+      identifier_type_id = PatientIdentifierType.find_by_name("National ID").id
+      sql_query =   "select identifier from patient_identifier "
+      sql_query +=  "where patient_id in (?) and identifier_type = ? and voided = '0'"
+      patient_npids = PatientIdentifier.find_by_sql([sql_query, positive_patients.map(&:patient_id), 
+        identifier_type_id]).map(&:identifier)
+      
+      ## Gets patient's art start date if exist.
+      query =   "SELECT i.identifier, YEAR(p.date_created) - YEAR(p.birthdate) "
+      query +=  "- IF(STR_TO_DATE(CONCAT(YEAR(p.date_created), '-', MONTH(p.birthdate), '-', "
+      query +=  "DAY(p.birthdate)) ,'%Y-%c-%e') > p.date_created, 1, 0) AS age FROM patient_identifier i "
+      query +=  "INNER JOIN person p ON (p.person_id = i.patient_id)"
+      query +=  "INNER JOIN patient_program pg ON i.patient_id = pg.patient_id AND "
+      query +=  "pg.program_id = 1 AND pg.voided = 0 "
+      query +=  "INNER JOIN patient_state s2 ON s2.patient_state_id = s2.patient_state_id "
+      query +=  "AND pg.patient_program_id = s2.patient_program_id "
+      query +=  "AND s2.patient_state_id = (SELECT MAX(s3.patient_state_id) FROM patient_state s3 "
+      query +=  "WHERE s3.patient_state_id = s2.patient_state_id) "
+      query +=  "AND i.voided = 0 AND i.identifier in (?) AND s2.state = 7 "
+      query +=  query_condition
+      #raise patient_npids.inspect
+
+      bart_on_art = Bart2Connection::PatientIdentifier.find_by_sql([query, patient_npids]).map(&:identifier)
+
+      ## Get anc patient id from national ID
+      sql_query =   "select patient_id from patient_identifier where identifier in (?) and voided = 0"
+      patient_ids = PatientIdentifier.find_by_sql([sql_query, bart_on_art]).map(&:patient_id) rescue []
+
+      return patient_ids
+
+    end
+
+    def getANCClientNewlyOnART(patient_ids, age, date)
+
+      current_pregnancy_id = EncounterType.find_by_name('Current Pregnancy').id
+      lmp_concept_id = ConceptName.find_by_name('Last Menstrual Period').concept_id
+      concept_ids = ['Reason for exiting care', 'On ART'].collect{|c| ConceptName.find_by_name(c).concept_id}
+      encounter_types = ['LAB RESULTS', 'ART_FOLLOWUP'].collect{|t| EncounterType.find_by_name(t).id}
+
+      results = Encounter.find_by_sql(['SELECT e.patient_id 
+        FROM encounter e INNER JOIN obs o on o.encounter_id = e.encounter_id
+        WHERE e.voided = 0 AND e.patient_id IN (?)
+        AND e.encounter_type IN (?) AND o.concept_id IN (?)
+        AND DATE(e.encounter_datetime) < ? AND COALESCE(
+        (SELECT name FROM concept_name WHERE concept_id = o.value_coded LIMIT 1),
+        o.value_text) IN (?)', patient_ids, encounter_types, concept_ids,
+        end_date, art_answers]).map(&:patient_id) rescue []
+
+      return results
+    end
+
+    def getANCClientsWithHIVPositive(patient_ids)
+      hiv_status_concept_id = ConceptName.find_by_name("HIV Status").concept_id
+      prev_hiv_status_concept_id = ConceptName.find_by_name("Previous HIV Test Results").concept_id
+
+      results = Encounter.find_by_sql(["SELECT distinct e.patient_id
+        FROM encounter e 
+        INNER JOIN person p ON (p.person_id = e.patient_id)
+        INNER JOIN obs o ON (e.encounter_id = o.encounter_id) WHERE e.patient_id in (?) 
+        AND (o.concept_id = #{hiv_status_concept_id} OR o.concept_id = #{hiv_status_concept_id}) 
+        AND ((o.value_coded = (SELECT concept_id FROM concept_name WHERE name = 'Positive' LIMIT 1))
+          OR (o.value_text = 'Positive'))", patient_ids])
+      
+      return results
 
     end
 
